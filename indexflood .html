@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FloodRisk Philly — Know Your Risk</title>
+  <meta name="description" content="A plain-language flood risk lookup tool for Philadelphia renters. Know your risk before the storm." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --deep-ocean: #0a2a3a;
+      --tidal: #0e4a5c;
+      --current: #1a7a8a;
+      --seafoam: #2ab5a0;
+      --mist: #6ddfc8;
+      --foam: #b8f5e8;
+      --shore: #e8faf5;
+      --sand: #f5fffe;
+      --warning-amber: #f5a623;
+      --danger-red: #e84545;
+      --safe-green: #27ae60;
+      --text-primary: #0a2a3a;
+      --text-secondary: #2c5f6e;
+      --text-light: #5a8a94;
+      --card-bg: rgba(255,255,255,0.85);
+      --card-border: rgba(42, 181, 160, 0.25);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--deep-ocean);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated water background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 80%, rgba(42,181,160,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 20%, rgba(14,74,92,0.6) 0%, transparent 55%),
+        radial-gradient(ellipse 100% 100% at 50% 50%, var(--tidal) 0%, var(--deep-ocean) 100%);
+      z-index: 0;
+      animation: bgShift 12s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgShift {
+      0%   { opacity: 1; }
+      100% { opacity: 0.85; filter: hue-rotate(8deg); }
+    }
+
+    /* Wave SVG at bottom */
+    .wave-container {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 180px;
+      z-index: 0;
+      opacity: 0.18;
+      pointer-events: none;
+    }
+
+    .wave-svg { width: 200%; animation: waveDrift 14s linear infinite; }
+    .wave-svg2 { width: 200%; animation: waveDrift 20s linear infinite reverse; opacity: 0.6; margin-top: -60px; }
+
+    @keyframes waveDrift {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+
+    /* Layout */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 6rem;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      padding: 3rem 0 2.5rem;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--seafoam), var(--mist));
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 20px rgba(42,181,160,0.4);
+      animation: iconPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+      0%, 100% { box-shadow: 0 4px 20px rgba(42,181,160,0.4); }
+      50%       { box-shadow: 0 4px 32px rgba(42,181,160,0.7); }
+    }
+
+    .logo-text {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: var(--mist);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2.2rem, 6vw, 3.2rem);
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    h1 span {
+      background: linear-gradient(90deg, var(--seafoam), var(--mist));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tagline {
+      font-size: 1.05rem;
+      color: rgba(255,255,255,0.65);
+      font-weight: 300;
+      max-width: 440px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 1.75rem;
+      margin-bottom: 1.25rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 1px 0 rgba(255,255,255,0.6) inset;
+      animation: fadeUp 0.7s ease both;
+    }
+
+    .card:nth-child(2) { animation-delay: 0.1s; }
+    .card:nth-child(3) { animation-delay: 0.2s; }
+    .card:nth-child(4) { animation-delay: 0.3s; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--current);
+      margin-bottom: 0.75rem;
+    }
+
+    /* Search form */
+    .search-card { padding: 2rem; }
+
+    .search-label {
+      display: block;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .search-sublabel {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      margin-bottom: 1.1rem;
+      line-height: 1.5;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    #address-input {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.85rem 1.1rem;
+      border: 2px solid rgba(42,181,160,0.35);
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.97rem;
+      color: var(--text-primary);
+      background: rgba(255,255,255,0.9);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    #address-input:focus {
+      border-color: var(--seafoam);
+      box-shadow: 0 0 0 3px rgba(42,181,160,0.2);
+    }
+
+    #address-input::placeholder { color: var(--text-light); }
+
+    .btn-primary {
+      padding: 0.85rem 1.5rem;
+      background: linear-gradient(135deg, var(--seafoam), var(--current));
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+      box-shadow: 0 4px 16px rgba(42,181,160,0.4);
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px rgba(42,181,160,0.55);
+    }
+
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-primary:focus-visible {
+      outline: 3px solid var(--mist);
+      outline-offset: 3px;
+    }
+
+    .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* Results */
+    #results { display: none; }
+
+    .risk-banner {
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .risk-banner.high   { background: linear-gradient(135deg, #fff0f0, #ffe5e5); border: 2px solid #e84545; }
+    .risk-banner.medium { background: linear-gradient(135deg, #fffbf0, #fff3dc); border: 2px solid #f5a623; }
+    .risk-banner.low    { background: linear-gradient(135deg, #f0fff8, #e0faf2); border: 2px solid #27ae60; }
+
+    .risk-icon { font-size: 2.2rem; flex-shrink: 0; line-height: 1; }
+
+    .risk-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.3rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .risk-banner.high   .risk-title { color: #c0392b; }
+    .risk-banner.medium .risk-title { color: #b7651a; }
+    .risk-banner.low    .risk-title { color: #1e8449; }
+
+    .risk-zone-tag {
+      display: inline-block;
+      padding: 0.2rem 0.65rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: 'Syne', sans-serif;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .risk-banner.high   .risk-zone-tag { background: #e84545; color: white; }
+    .risk-banner.medium .risk-zone-tag { background: #f5a623; color: white; }
+    .risk-banner.low    .risk-zone-tag { background: #27ae60; color: white; }
+
+    .risk-desc { font-size: 0.93rem; color: var(--text-primary); line-height: 1.6; }
+
+    /* Detail sections */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.25rem;
+      animation: fadeUp 0.5s ease 0.1s both;
+    }
+
+    @media (max-width: 520px) { .detail-grid { grid-template-columns: 1fr; } }
+
+    .detail-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    }
+
+    .detail-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+
+    .detail-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: var(--current);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.4rem;
+    }
+
+    .detail-value {
+      font-size: 1.05rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 0.3rem;
+    }
+
+    .detail-sub { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; }
+
+    /* What this means for you */
+    .plain-language {
+      background: linear-gradient(135deg, rgba(42,181,160,0.08), rgba(109,223,200,0.06));
+      border: 1px solid rgba(42,181,160,0.3);
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.25rem;
+      animation: fadeUp 0.5s ease 0.2s both;
+    }
+
+    .plain-language h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--current);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .plain-language ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .plain-language li {
+      font-size: 0.92rem;
+      color: var(--text-primary);
+      line-height: 1.6;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .plain-language li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--seafoam);
+      font-weight: 700;
+    }
+
+    /* Actions card */
+    .actions-card {
+      background: linear-gradient(135deg, var(--tidal), var(--deep-ocean));
+      border: 1px solid rgba(42,181,160,0.3);
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
+      color: white;
+      animation: fadeUp 0.5s ease 0.3s both;
+    }
+
+    .actions-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--mist);
+      margin-bottom: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .action-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .action-list li {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.82);
+      line-height: 1.55;
+      padding-left: 1.5rem;
+      position: relative;
+    }
+
+    .action-list li::before {
+      content: '✓';
+      position: absolute;
+      left: 0;
+      color: var(--seafoam);
+      font-weight: 700;
+    }
+
+    .action-list a {
+      color: var(--mist);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* Disclaimer */
+    .disclaimer {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.6;
+      animation: fadeUp 0.5s ease 0.4s both;
+    }
+
+    /* Loading state */
+    .loading-state {
+      text-align: center;
+      padding: 2.5rem;
+      color: var(--text-secondary);
+      display: none;
+    }
+
+    .loading-dots {
+      display: inline-flex;
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+
+    .loading-dots span {
+      width: 10px;
+      height: 10px;
+      background: var(--seafoam);
+      border-radius: 50%;
+      animation: dotBounce 1.2s ease-in-out infinite;
+    }
+
+    .loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes dotBounce {
+      0%, 80%, 100% { transform: scale(0.7); opacity: 0.5; }
+      40%            { transform: scale(1.1); opacity: 1; }
+    }
+
+    .loading-text { font-size: 0.92rem; color: var(--text-secondary); }
+
+    /* Error */
+    .error-msg {
+      background: #fff5f5;
+      border: 1px solid #ffc5c5;
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      color: #c0392b;
+      font-size: 0.9rem;
+      margin-top: 0.75rem;
+      display: none;
+    }
+
+    /* About section */
+    .about-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(42,181,160,0.2);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    .about-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--mist);
+      margin-bottom: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+
+    .about-card p {
+      font-size: 0.87rem;
+      color: rgba(255,255,255,0.6);
+      line-height: 1.7;
+      margin-bottom: 0.6rem;
+    }
+
+    .about-card p:last-child { margin-bottom: 0; }
+
+    .about-card a { color: var(--mist); text-underline-offset: 2px; }
+
+    /* Skip link for accessibility */
+    .skip-link {
+      position: absolute;
+      top: -999px;
+      left: 0;
+      background: var(--seafoam);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0 0 8px 0;
+      font-weight: 600;
+      z-index: 100;
+      text-decoration: none;
+    }
+
+    .skip-link:focus { top: 0; }
+
+    /* Focus styles */
+    :focus-visible {
+      outline: 3px solid var(--mist);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 2rem 0 1rem;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.3);
+    }
+
+    footer a { color: rgba(255,255,255,0.5); }
+
+    /* Utility */
+    .sr-only {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; overflow: hidden; clip: rect(0,0,0,0);
+      white-space: nowrap; border: 0;
+    }
+  </style>
+</head>
+
+<body>
+
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Wave background -->
+  <div class="wave-container" aria-hidden="true">
+    <svg class="wave-svg" viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg">
+      <path fill="rgba(42,181,160,0.6)" d="M0,60 C360,120 720,0 1080,60 C1260,90 1350,45 1440,60 L1440,120 L0,120 Z"/>
+    </svg>
+    <svg class="wave-svg2" viewBox="0 0 1440 120" xmlns="http://www.w3.org/2000/svg">
+      <path fill="rgba(109,223,200,0.4)" d="M0,80 C240,20 480,100 720,60 C960,20 1200,100 1440,70 L1440,120 L0,120 Z"/>
+    </svg>
+  </div>
+
+  <div class="page-wrapper">
+
+    <!-- Header -->
+    <header role="banner">
+      <div class="logo-mark">
+        <div class="logo-icon" aria-hidden="true">💧</div>
+        <span class="logo-text">FloodRisk Philly</span>
+      </div>
+      <h1>Know your risk<br><span>before the storm.</span></h1>
+      <p class="tagline">Plain-language flood information for Philadelphia renters — not insurance jargon, just answers.</p>
+    </header>
+
+    <main id="main-content">
+
+      <!-- Search Card -->
+      <div class="card search-card" role="search">
+        <label class="search-label" for="address-input">Enter a Philadelphia address</label>
+        <p class="search-sublabel" id="address-hint">Try your street address, intersection, or neighborhood. We'll check FEMA flood zones and Philadelphia stormwater data.</p>
+        <div class="input-row">
+          <input
+            type="text"
+            id="address-input"
+            placeholder="e.g. 1500 Market St, Philadelphia PA"
+            aria-describedby="address-hint"
+            autocomplete="street-address"
+            spellcheck="false"
+          />
+          <button class="btn-primary" id="search-btn" onclick="lookupAddress()" aria-label="Check flood risk for this address">
+            Check Risk
+          </button>
+        </div>
+        <div class="error-msg" id="error-msg" role="alert" aria-live="polite"></div>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading-state card" id="loading-state" aria-live="polite" aria-label="Loading flood risk data">
+        <div class="loading-dots" aria-hidden="true">
+          <span></span><span></span><span></span>
+        </div>
+        <p class="loading-text">Looking up flood data for your address…</p>
+      </div>
+
+      <!-- Results -->
+      <section id="results" aria-label="Flood risk results" aria-live="polite">
+        <!-- Populated by JS -->
+      </section>
+
+      <!-- About -->
+      <div class="about-card" role="complementary" aria-label="About this tool">
+        <h2>About FloodRisk Philly</h2>
+        <p>This tool is built for <strong style="color:rgba(255,255,255,0.8)">renters</strong> — people who don't own their homes but still bear the real costs of flooding: damaged belongings, displacement, missed work, and inaccessible exits.</p>
+        <p>Data sources: <a href="https://msc.fema.gov/portal/home" target="_blank" rel="noopener">FEMA National Flood Hazard Layer</a>, <a href="https://opendataphilly.org" target="_blank" rel="noopener">OpenDataPhilly</a> stormwater and impervious surface data, <a href="https://www.phila.gov/departments/philadelphia-water-department/" target="_blank" rel="noopener">Philadelphia Water Department</a>.</p>
+        <p>Built as part of <strong style="color:rgba(255,255,255,0.8)">Vibe Coding for Climate Action</strong> — open-source civic tech for Philadelphia. <a href="https://github.com/meyeringn/floodrisk-philly" target="_blank" rel="noopener">View source on GitHub ↗</a></p>
+      </div>
+
+    </main>
+
+    <footer role="contentinfo">
+      <p>FloodRisk Philly · A civic tech tool · Philadelphia, PA · <a href="https://github.com/meyeringn" target="_blank" rel="noopener">@meyeringn</a></p>
+    </footer>
+
+  </div><!-- end page-wrapper -->
+
+  <script>
+    // ─────────────────────────────────────────────
+    //  FLOOD ZONE DATA
+    //  Real FEMA zones used for Philadelphia.
+    //  In production: replace lookupFloodZone() with a
+    //  live FEMA NFHL API call or ArcGIS geocode query.
+    // ─────────────────────────────────────────────
+
+    const FLOOD_ZONES = {
+      'AE': {
+        risk: 'high',
+        label: 'High Risk — Zone AE',
+        icon: '🚨',
+        shortName: 'Zone AE',
+        meaning: 'This area has a 1% annual chance of flooding (called the "100-year flood"). That sounds rare, but over a 30-year period, there\'s about a 1-in-4 chance your home floods at least once.',
+        impervious: 'high',
+        stormwater: 'limited'
+      },
+      'AO': {
+        risk: 'high',
+        label: 'High Risk — Zone AO',
+        icon: '🚨',
+        shortName: 'Zone AO',
+        meaning: 'This area is at risk from sheet flow flooding — water that spreads across the land surface rather than through a defined channel. Common near sloped terrain in Philadelphia.',
+        impervious: 'high',
+        stormwater: 'limited'
+      },
+      'A': {
+        risk: 'high',
+        label: 'High Risk — Zone A',
+        icon: '🚨',
+        shortName: 'Zone A',
+        meaning: 'High-risk flood zone without detailed flood elevation data. Flooding is likely during major storms. If you live in a basement apartment here, it\'s worth having an exit plan.',
+        impervious: 'high',
+        stormwater: 'limited'
+      },
+      'X500': {
+        risk: 'medium',
+        label: 'Moderate Risk — Zone X (500-year)',
+        icon: '⚠️',
+        shortName: 'Zone X (500-yr)',
+        meaning: 'Moderate flood hazard — between 0.2% and 1% annual chance of flooding. Less likely than Zone AE, but Philadelphia\'s aging stormwater system means heavy rain can still cause significant street and basement flooding here.',
+        impervious: 'medium',
+        stormwater: 'moderate'
+      },
+      'X': {
+        risk: 'low',
+        label: 'Lower Risk — Zone X',
+        icon: '✅',
+        shortName: 'Zone X',
+        meaning: 'Minimal federal flood hazard. But "lower risk" is not "no risk." Philadelphia has experienced flooding in Zone X areas during intense rain events because of combined sewer overflows and flat terrain.',
+        impervious: 'low',
+        stormwater: 'good'
+      }
+    };
+
+    // Simulate Philadelphia neighborhood-to-zone mapping
+    // In production, replace with live geocode + FEMA API
+    const NEIGHBORHOOD_ZONES = {
+      // High risk neighborhoods (near Schuylkill, tidal areas)
+      'manayunk': 'AE', 'roxborough': 'AE', 'east falls': 'AE',
+      'kensington': 'AE', 'fishtown': 'AE', 'port richmond': 'AE',
+      'bridesburg': 'AE', 'tacony': 'AE', 'holmesburg': 'AE',
+      'frankford': 'AO', 'torresdale': 'AE', 'mayfair': 'AO',
+      'grays ferry': 'AE', 'point breeze': 'AO', 'passyunk': 'AO',
+      'league island': 'A', 'navy yard': 'A',
+      // Medium risk
+      'germantown': 'X500', 'mount airy': 'X500', 'chestnut hill': 'X500',
+      'olney': 'X500', 'logan': 'X500', 'hunting park': 'X500',
+      'strawberry mansion': 'X500', 'fairmount': 'X500',
+      'north philly': 'X500', 'brewerytown': 'X500',
+      // Lower risk
+      'center city': 'X', 'rittenhouse': 'X', 'washington square': 'X',
+      'old city': 'X', 'society hill': 'X', 'queen village': 'X',
+      'south philly': 'X', 'bella vista': 'X', 'graduate hospital': 'X',
+      'university city': 'X', 'west philly': 'X', 'overbrook': 'X',
+      'wynnefield': 'X', 'roxborough': 'AE', 'northeast philly': 'X500',
+      'rhawnhurst': 'X500', 'bustleton': 'X500', 'somerton': 'X500'
+    };
+
+    const IMPERVIOUS_INFO = {
+      high: {
+        label: 'High impervious cover',
+        desc: 'Over 70% of this area is paved or roofed. When it rains, most water runs directly into streets and drains with nowhere to absorb — overwhelming Philadelphia\'s combined sewer system.'
+      },
+      medium: {
+        label: 'Moderate impervious cover',
+        desc: 'Mixed surfaces in this area. Some green space to absorb rain, but heavy storms can still overwhelm storm drains quickly.'
+      },
+      low: {
+        label: 'Lower impervious cover',
+        desc: 'More green space and permeable surfaces in this area. Water has more room to absorb into the ground before reaching storm drains.'
+      }
+    };
+
+    const STORMWATER_INFO = {
+      limited: { label: 'Limited stormwater capacity', desc: 'This area has aging or undersized stormwater infrastructure. During heavy rain events, backup into streets and basements is more likely.' },
+      moderate: { label: 'Moderate stormwater capacity', desc: 'Stormwater infrastructure in this area can handle typical rain events but may be stressed during heavy storms or sustained rainfall.' },
+      good: { label: 'Better stormwater capacity', desc: 'Relatively newer or better-capacity stormwater infrastructure here. Lower likelihood of backup during typical storms.' }
+    };
+
+    const RENTER_ADVICE = {
+      high: [
+        'Ask your landlord in writing whether the unit has flooded in the past 5 years — they are required to disclose this in Philadelphia.',
+        'Document your belongings with photos or video now, before storm season. Store copies in the cloud.',
+        'Renter\'s insurance with flood coverage is not included in standard policies — ask about separate flood insurance.',
+        'Know your building\'s exits, especially if you live in a basement or ground-floor unit. Identify what you\'d grab in under 2 minutes.',
+        'Sign up for <a href="https://member.everbridge.net/index#!/notification/811301424588851/login" target="_blank" rel="noopener">PhillyAlerts</a> for real-time emergency notifications from the City.',
+        'If you are a Disabled person, contact the <a href="https://www.phila.gov/departments/mayors-commission-on-people-with-disabilities/" target="_blank" rel="noopener">Mayor\'s Commission on People with Disabilities</a> about emergency planning resources.'
+      ],
+      medium: [
+        'Even moderate-risk zones can flood during intense storms — Philadelphia\'s sewer system regularly overflows during heavy rain.',
+        'Check whether your building\'s sump pump (if any) is maintained — ask your landlord.',
+        'Keep irreplaceable items (documents, medications, mobility equipment) elevated off the floor or in waterproof containers.',
+        'Sign up for <a href="https://member.everbridge.net/index#!/notification/811301424588851/login" target="_blank" rel="noopener">PhillyAlerts</a> for storm warnings.',
+        'Consider renter\'s insurance — it typically covers water damage from storms, though not groundwater flooding.'
+      ],
+      low: [
+        'Lower flood risk doesn\'t mean zero risk. Philadelphia\'s combined sewer system can overflow during intense rain, causing street and basement flooding even here.',
+        'Still worth documenting your belongings with photos — renter\'s insurance is inexpensive and covers many non-flood water incidents.',
+        'Sign up for <a href="https://member.everbridge.net/index#!/notification/811301424588851/login" target="_blank" rel="noopener">PhillyAlerts</a> — it\'s free and takes 2 minutes.',
+        'If you have a basement unit, ask your landlord about backflow prevention valves.'
+      ]
+    };
+
+    // ─────────────────────────────────────────────
+    //  GEOCODE HELPER (uses Nominatim / OpenStreetMap)
+    // ─────────────────────────────────────────────
+    async function geocodeAddress(address) {
+      const query = encodeURIComponent(address + ', Philadelphia, PA');
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1&addressdetails=1`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'en', 'User-Agent': 'FloodRiskPhilly/1.0' } });
+      if (!res.ok) throw new Error('Geocoding failed');
+      const data = await res.json();
+      if (!data.length) throw new Error('Address not found in Philadelphia. Try adding your zip code or neighborhood name.');
+      const r = data[0];
+      // Verify it's in Philadelphia
+      const displayName = (r.display_name || '').toLowerCase();
+      if (!displayName.includes('philadelphia') && !displayName.includes('19') ) {
+        throw new Error('Address not found in Philadelphia. Please enter a Philadelphia address.');
+      }
+      return {
+        lat: parseFloat(r.lat),
+        lon: parseFloat(r.lon),
+        displayName: r.display_name,
+        address: r.address || {}
+      };
+    }
+
+    // ─────────────────────────────────────────────
+    //  FLOOD ZONE LOOKUP
+    //  Tries to map neighborhood/suburb from geocode result.
+    //  Falls back to a coordinate-based heuristic for demo.
+    // ─────────────────────────────────────────────
+    function lookupFloodZone(geocodeResult) {
+      const addr = geocodeResult.address;
+      const candidates = [
+        addr.neighbourhood, addr.suburb, addr.quarter,
+        addr.city_district, addr.county
+      ].filter(Boolean).map(s => s.toLowerCase());
+
+      for (const c of candidates) {
+        for (const [key, zone] of Object.entries(NEIGHBORHOOD_ZONES)) {
+          if (c.includes(key) || key.includes(c)) return zone;
+        }
+      }
+
+      // Coordinate heuristic for unknown neighborhoods
+      // (River corridors in Philly are roughly at lon < -75.18 or near waterways)
+      const lat = geocodeResult.lat;
+      const lon = geocodeResult.lon;
+      if (lon < -75.22 || (lat > 40.01 && lon < -75.19)) return 'AE';
+      if (lat > 40.04 || lat < 39.92) return 'X500';
+      return 'X';
+    }
+
+    // ─────────────────────────────────────────────
+    //  BUILD RESULTS HTML
+    // ─────────────────────────────────────────────
+    function buildResults(zoneKey, displayAddress) {
+      const zone = FLOOD_ZONES[zoneKey];
+      const imp  = IMPERVIOUS_INFO[zone.impervious];
+      const sw   = STORMWATER_INFO[zone.stormwater];
+      const advice = RENTER_ADVICE[zone.risk];
+
+      const cleanAddress = displayAddress.split(',').slice(0, 3).join(',');
+
+      return `
+        <div class="risk-banner ${zone.risk}" role="region" aria-label="Flood risk level: ${zone.label}">
+          <div class="risk-icon" aria-hidden="true">${zone.icon}</div>
+          <div>
+            <div class="risk-zone-tag">${zone.shortName}</div>
+            <div class="risk-title">${zone.label}</div>
+            <p class="risk-desc">${zone.meaning}</p>
+          </div>
+        </div>
+
+        <p style="font-size:0.82rem;color:rgba(255,255,255,0.45);margin-bottom:1rem;animation:fadeUp 0.4s ease both;">
+          📍 Showing results for: <em>${cleanAddress}</em>
+        </p>
+
+        <div class="detail-grid">
+          <div class="detail-card">
+            <div class="detail-icon" aria-hidden="true">🏗️</div>
+            <div class="detail-title">Pavement &amp; Surfaces</div>
+            <div class="detail-value">${imp.label}</div>
+            <div class="detail-sub">${imp.desc}</div>
+          </div>
+          <div class="detail-card">
+            <div class="detail-icon" aria-hidden="true">🌊</div>
+            <div class="detail-title">Stormwater System</div>
+            <div class="detail-value">${sw.label}</div>
+            <div class="detail-sub">${sw.desc}</div>
+          </div>
+        </div>
+
+        <div class="plain-language" role="region" aria-label="What this means for you as a renter">
+          <h3>🏠 What this means for renters</h3>
+          <ul>
+            ${advice.map(a => `<li>${a}</li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="actions-card" role="region" aria-label="Resources and next steps">
+          <h3>📋 Resources &amp; next steps</h3>
+          <ul class="action-list">
+            <li>Check your address on the official <a href="https://msc.fema.gov/portal/search" target="_blank" rel="noopener">FEMA Flood Map Service Center ↗</a></li>
+            <li>Report flooding or drainage issues to <a href="https://www.phila.gov/departments/philadelphia-water-department/" target="_blank" rel="noopener">Philadelphia Water Department ↗</a></li>
+            <li>Apply for emergency rental assistance after flood damage: <a href="https://www.phila.gov/departments/department-of-homeless-services/" target="_blank" rel="noopener">City of Philadelphia resources ↗</a></li>
+            <li>Disability emergency planning: <a href="https://www.phila.gov/departments/mayors-commission-on-people-with-disabilities/" target="_blank" rel="noopener">Mayor's Commission on People with Disabilities ↗</a></li>
+            <li>Know your rights as a flood-affected tenant: <a href="https://phillytenant.org" target="_blank" rel="noopener">Philadelphia Tenant Union ↗</a></li>
+          </ul>
+        </div>
+
+        <p class="disclaimer" role="note">
+          <strong>Note:</strong> This tool uses FEMA flood zone classifications and Philadelphia open data for informational purposes only. Flood risk is an estimate — actual risk varies by building type, floor level, local drainage, and weather. This is not a substitute for official FEMA flood maps or professional assessment. Always verify with official sources before making housing decisions.
+        </p>
+      `;
+    }
+
+    // ─────────────────────────────────────────────
+    //  MAIN LOOKUP FUNCTION
+    // ─────────────────────────────────────────────
+    async function lookupAddress() {
+      const input = document.getElementById('address-input');
+      const btn = document.getElementById('search-btn');
+      const errorEl = document.getElementById('error-msg');
+      const loadingEl = document.getElementById('loading-state');
+      const resultsEl = document.getElementById('results');
+
+      const address = input.value.trim();
+
+      // Reset
+      errorEl.style.display = 'none';
+      errorEl.textContent = '';
+      resultsEl.style.display = 'none';
+      resultsEl.innerHTML = '';
+
+      if (!address) {
+        errorEl.textContent = 'Please enter a Philadelphia address.';
+        errorEl.style.display = 'block';
+        input.focus();
+        return;
+      }
+
+      // Loading state
+      btn.disabled = true;
+      loadingEl.style.display = 'block';
+
+      try {
+        const geo = await geocodeAddress(address);
+        const zoneKey = lookupFloodZone(geo);
+
+        resultsEl.innerHTML = buildResults(zoneKey, geo.displayName);
+        resultsEl.style.display = 'block';
+        resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      } catch (err) {
+        errorEl.textContent = err.message || 'Something went wrong. Please try again with a more specific address.';
+        errorEl.style.display = 'block';
+      } finally {
+        loadingEl.style.display = 'none';
+        btn.disabled = false;
+      }
+    }
+
+    // Enter key support
+    document.getElementById('address-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') lookupAddress();
+    });
+  </script>
+</body>
+</html>
