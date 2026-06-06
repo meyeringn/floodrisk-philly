@@ -136,11 +136,11 @@ All tools are Philadelphia-grounded, open-source, and built at the intersection 
 - [x] Plain-language renter guidance
 - [x] Renter-specific resource links
 - [x] Full WCAG accessibility
+- [x] Live FEMA NFHL API integration (replace neighborhood heuristic with parcel-level data)
+- [x] Map visualization of flood zone boundaries
 
 **v1.1 — Next**
 
-- [ ] Live FEMA NFHL API integration (replace neighborhood heuristic with parcel-level data)
-- [ ] Map visualization of flood zone boundaries
 - [ ] Historical flooding incident overlay (PhillyWater data)
 
 **v2.0 — Future**
