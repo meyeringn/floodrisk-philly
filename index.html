@@ -355,23 +355,26 @@
 
     /* What this means for you */
     .plain-language {
-      background: linear-gradient(135deg, rgba(42,181,160,0.08), rgba(109,223,200,0.06));
-      border: 1px solid rgba(42,181,160,0.3);
+      background: #ffffff;
+      border: 2px solid var(--seafoam);
       border-radius: 16px;
       padding: 1.5rem 1.75rem;
       margin-bottom: 1.25rem;
       animation: fadeUp 0.5s ease 0.2s both;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
     }
 
     .plain-language h3 {
       font-family: 'Syne', sans-serif;
-      font-weight: 700;
-      font-size: 1rem;
-      color: var(--current);
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--tidal);
       margin-bottom: 1rem;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid var(--foam);
     }
 
     .plain-language ul {
@@ -383,9 +386,9 @@
 
     .plain-language li {
       font-size: 0.92rem;
-      color: var(--text-primary);
+      color: #1a2e35;
       line-height: 1.6;
-      padding-left: 1.5rem;
+      padding-left: 1.6rem;
       position: relative;
     }
 
@@ -393,8 +396,8 @@
       content: '→';
       position: absolute;
       left: 0;
-      color: var(--seafoam);
-      font-weight: 700;
+      color: var(--current);
+      font-weight: 900;
     }
 
     /* Actions card */
