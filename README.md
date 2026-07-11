@@ -1,298 +1,182 @@
-# 💧 FloodRisk Philly
+# FloodRisk Philly
 
-**Know your risk before the storm.**
+FloodRisk Philly is a plain-language flood-zone lookup and renter preparedness tool for Philadelphia.
 
-[![Live Tool](https://img.shields.io/badge/🌊%20Live%20Tool-meyeringn.github.io%2Ffloodrisk--philly-2ab5a0?style=for-the-badge)](https://meyeringn.github.io/floodrisk-philly)
-[![Part of Vibe Coding for Climate Action](https://img.shields.io/badge/Vibe%20Coding%20for%20Climate%20Action-Portfolio-0e4a5c?style=for-the-badge)](https://github.com/meyeringn)
-[![License: MIT](https://img.shields.io/badge/License-MIT-6ddfc8?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.1-2ab5a0?style=for-the-badge)](https://github.com/meyeringn/floodrisk-philly/releases)
+It helps a user:
 
------
+1. locate a Philadelphia street address;
+2. check the FEMA flood-zone classification returned for that point;
+3. understand what the federal result can and cannot show; and
+4. create a renter-focused plan based on floor level, exits, disability, power, evacuation-assistance, and pet needs.
 
-> *“Should I be worried about my apartment flooding?”*
-> 
-> That’s the question FloodRisk Philly was built to answer — in plain English (and Spanish), not insurance jargon.
+## Rebuild status
 
------
+This repository structure is the FloodRisk Philly 2.0 rebuild.
 
-## What It Does
+The rebuild separates the original all-in-one file into focused, maintainable files:
 
-FloodRisk Philly is a single-file, no-install civic tech tool. Enter any Philadelphia address and get:
-
-- **Your FEMA flood zone** — explained in plain language (not “Zone AE,” but *what Zone AE actually means for your life*)
-- **Impervious surface assessment** — how much of your neighborhood is paved, and why that matters when it rains
-- **Stormwater infrastructure rating** — how well your area’s drainage system handles heavy storms
-- **Sewer system stress indicator** — whether your neighborhood runs on a combined sewer overflow (CSO) system, how old the infrastructure is, and your overflow risk rating
-- **Disability & evacuation access rating** — floor-level risk, elevator dependency guidance, SEPTA Access paratransit notes, and emergency planning resources for Disabled renters
-- **Historical CSO event overlay** — toggle Philadelphia’s combined sewer overflow discharge points directly on the flood map
-- **“What do I do now?” action checklist** — a personalized, risk-level-specific action list organized into *Right Now*, *This Week*, and *Before Storm Season* — with checkboxes you can tick off
-- **Full English / Spanish toggle** — every piece of UI text, renter advice, and resource link available in both languages; preference saved across sessions
-- **Renter-specific action steps** — including disclosure rights, emergency planning, insurance guidance, and Disabled renter resources
-- **Direct links** to FEMA flood maps, Philadelphia Water Department, Philly Tenant Union, Ready to Unite Philadelphia, and the Mayor’s Commission on People with Disabilities
-
------
-
-## Why Renters, Not Homeowners
-
-Most flood risk tools are built with homeowners in mind: insurance premiums, property values, buyout programs.
-
-But in Philadelphia, **over 45% of residents rent**. Renters bear real flood costs — damaged belongings, displacement, missed work, inaccessible building exits — without owning the property or controlling its flood mitigation.
-
-This tool is built for them. Specifically:
-
-- **Residents in basement and garden-level units**, where flood risk is highest and exits are most constrained
-- **Disabled renters**, who face compounded risk during flooding and displacement events, including paratransit service disruptions and elevator dependency
-- **Low-income renters** in high-impervious neighborhoods near the Schuylkill River, Delaware River, and Frankford Creek corridors — areas with both high flood exposure and limited stormwater infrastructure
-- **Spanish-speaking renters**, now served in their primary language
-
------
-
-## The Climate Justice Context
-
-Philadelphia’s flood risk is not evenly distributed. It follows the lines of disinvestment.
-
-Neighborhoods like Kensington, Manayunk, Port Richmond, Frankford, and Grays Ferry sit in FEMA Zone AE — the highest-risk designation — and also have some of the city’s oldest stormwater infrastructure and highest rates of impervious surface cover. These are predominantly working-class, lower-income neighborhoods where renters outnumber owners. Many also have CSO coverage rates above 85%, meaning nearly all stormwater and sewage run through the same aging pipes.
-
-Meanwhile, neighborhoods with newer infrastructure and more green space face lower risk — and those neighborhoods are, on average, wealthier and whiter.
-
-FloodRisk Philly names that pattern directly, rather than presenting flood data as a neutral technical fact.
-
------
-
-## How It Works
-
-```
-User enters address (English or Spanish interface)
-        ↓
-Geocoded via OpenStreetMap / Nominatim API
-        ↓
-Three-strategy FEMA NFHL query cascade
-(JSON fetch → GeoJSON fetch → JSONP fallback)
-        ↓
-FEMA Flood Zone classified (AE · AO · AH · A · VE · X500 · X · D)
-        ↓
-Neighborhood matched to sewer infrastructure data
-(CSO coverage % · infrastructure age · overflow risk rating)
-        ↓
-Disability & evacuation access card generated by risk level
-        ↓
-Plain-language renter guidance generated in selected language
-        ↓
-Risk-specific action checklist generated (Right Now / This Week / Before Storm Season)
-        ↓
-Leaflet map rendered with FEMA WMS overlay + toggleable CSO event layer
-        ↓
-Resource links returned in selected language
+```text
+index.html
+css/
+  styles.css
+js/
+  i18n.js
+  app.js
+METHODOLOGY.md
+PRIVACY.md
+README.md
+.github/
+  workflows/
+    validate.yml
 ```
 
-**Data sources:**
+## Major changes
 
-|Source                                                                                           |What it provides                                                           |
-|-------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------|
-|[FEMA National Flood Hazard Layer](https://msc.fema.gov/portal/home)                             |Official flood zone classifications (AE, AO, AH, A, VE, X500, X, D)        |
-|[OpenDataPhilly](https://opendataphilly.org)                                                     |Stormwater infrastructure and impervious surface data                      |
-|[Philadelphia Water Department](https://www.phila.gov/departments/philadelphia-water-department/)|Combined sewer overflow system coverage and Green City Clean Waters program|
-|[OpenStreetMap / Nominatim](https://nominatim.openstreetmap.org)                                 |Address geocoding                                                          |
-|PWD Green City Clean Waters documentation                                                        |CSO outfall cluster locations and neighborhood coverage rates              |
+### Trustworthy results
 
------
+- The FEMA classification is presented as the official mapped result.
+- Personalized renter guidance is kept separate.
+- API errors and missing FEMA features never become lower-risk results.
+- Lower mapped risk is explicitly described as not zero flood risk.
+- Unsupported neighborhood sewer and overflow estimates are excluded from the primary result until their methodology is documented.
 
-## FEMA Flood Zones — Plain English Guide
+### Renter-centered guidance
 
-|Zone          |Risk Level    |What It Means                                                                               |
-|--------------|--------------|--------------------------------------------------------------------------------------------|
-|**AE**        |🚨 High        |1% annual flood chance. Over 30 years: ~1-in-4 odds of flooding at least once.              |
-|**AO**        |🚨 High        |Sheet flow flooding risk — water spreading across slopes rather than through channels.      |
-|**AH**        |🚨 High        |Shallow flooding, average 1–3 feet, typically in low-lying areas or depressions.            |
-|**A**         |🚨 High        |High risk without detailed elevation data. Basement units should have exit plans.           |
-|**VE**        |🚨 High        |Coastal high-risk zone with wave action. Present near the Delaware River.                   |
-|**X (500-yr)**|⚠️ Moderate    |0.2%–1% annual flood chance. Philadelphia’s aging sewer system raises real risk here.       |
-|**X**         |✅ Lower       |Minimal federal hazard — but not zero risk, especially during CSO events and intense storms.|
-|**D**         |⚠️ Undetermined|No flood analysis conducted. No data ≠ no risk.                                             |
+The user can tailor guidance based on:
 
------
+- basement, street-level, or upper-floor location;
+- elevator reliance or inability to use stairs;
+- powered medical, mobility, or communication equipment;
+- evacuation-assistance needs;
+- pets; and
+- a single usable exit.
 
-## Sewer System Stress — How We Assess It
+These answers stay in the browser and do not change the FEMA classification.
 
-Philadelphia’s combined sewer overflow (CSO) system is one of the most significant flood risk factors in the city — and one that FEMA maps don’t capture.
+### Accessibility
 
-The **Sewer System Stress** card shows:
+The rebuild includes:
 
-- **Combined Sewer Coverage %** — what share of your neighborhood’s stormwater and sewage run through shared pipes (sourced from Philadelphia Water’s Green City Clean Waters program documentation)
-- **Infrastructure Age** — the era when neighborhood sewer lines were primarily built
-- **Overflow Risk Rating** — a plain-language risk rating from Lower to Very High
+- semantic headings and landmarks;
+- a skip link;
+- keyboard-friendly controls;
+- visible focus indicators;
+- live status and error announcements;
+- focus movement to new results;
+- reduced-motion support;
+- forced-colors support;
+- mobile reflow;
+- large touch targets;
+- text equivalents for map information; and
+- English and Spanish interfaces.
 
-Neighborhoods with CSO coverage above 80% (Kensington, Port Richmond, Fishtown, Manayunk, Grays Ferry) face the highest combined sewer risk. The Philadelphia Water Department’s [Green City Clean Waters](https://www.phila.gov/departments/philadelphia-water-department/water-environment/improving-our-waterways/green-city-clean-waters/) program is working to reduce CSO events through green infrastructure, but this is a decades-long effort.
+The map is supplementary. Decision-relevant information is also shown as text.
 
------
+### Privacy
 
-## Disability & Evacuation Access — What We Surface
+The app has no account system or application database.
 
-FloodRisk Philly fills a gap in standard flood risk tools: **what flooding means for Disabled renters specifically**.
+The browser sends:
 
-The **Disability & Evacuation Access** card surfaces:
+- the cleaned street address to OpenStreetMap Nominatim;
+- coordinates to FEMA's National Flood Hazard Layer; and
+- map-tile requests to OpenStreetMap infrastructure.
 
-- **Floor Level Risk** — whether basement/ground-floor units face disproportionate exit constraints during flooding
-- **Elevator Dependency** — guidance for residents who cannot use stairs in an emergency
-- **SEPTA Access** — paratransit service disruption risk and advance planning guidance during flood events
-- **Emergency Planning** — how to register with the Mayor’s Commission and Philadelphia OEM for disability-aware emergency notifications
+The application does not intentionally save searched addresses or renter-profile answers.
 
-Links are provided to the Mayor’s Commission on People with Disabilities, Ready to Unite Philadelphia, and the Philadelphia Office of Emergency Management.
+Read `PRIVACY.md` for details.
 
------
+## Methodology
 
-## Historical CSO Event Layer
+The primary result comes from FEMA's National Flood Hazard Layer.
 
-Toggle the **CSO Events** overlay on the map to see Philadelphia’s major combined sewer overflow discharge points — the locations where the combined sewer system releases directly into waterways during heavy rain.
+FloodRisk Philly:
 
-These 12 clusters represent the major CSO outfall locations across Philadelphia’s seven watersheds (Frankford Creek, Delaware River, Schuylkill River, Tacony Creek, Cobbs Creek, Mill Creek, Pennypack Creek, Darby Creek, and Wissahickon Creek), sourced from Philadelphia Water Department documentation.
+1. removes common apartment and unit identifiers from the search;
+2. geocodes the address;
+3. confirms that the result is within Philadelphia;
+4. queries FEMA at the returned point;
+5. translates the returned FEMA classification into plain language; and
+6. displays renter guidance separately.
 
-This layer helps renters understand why their street may flood even when they’re not in a FEMA-designated high-risk zone.
+Read `METHODOLOGY.md` for the complete methodology and limitations.
 
------
+## Run locally
 
-## “What Do I Do Now?” Checklist
+Because the site makes network requests, use a local web server rather than opening `index.html` directly.
 
-After every lookup, FloodRisk Philly generates a **risk-level-specific action checklist** organized into three phases:
-
-- **⚡ Right Now** — immediate actions (2 minutes or less): charge a power bank, locate your exit routes, put medications in a waterproof bag
-- **📅 This Week** — near-term actions: ask your landlord about flood history, sign up for PhillyAlerts, get a renters insurance quote
-- **🌧️ Before Storm Season** — preparedness actions: elevate valuables, register with the Mayor’s Commission, know your building’s emergency shut-offs
-
-Each item has a checkbox. A progress bar tracks completion. The checklist adapts to risk level — high-risk zone residents get more urgent and specific items.
-
------
-
-## EN / ES Language Toggle
-
-Every element of the tool is available in English and Spanish:
-
-- All UI labels, button text, and headings
-- Flood zone explanations
-- Renter advice lists
-- Sewer stress and access ratings
-- Action checklist items
-- Resource link labels
-
-Toggle with the **EN / ES** button in the top right corner. Your language preference is saved across sessions.
-
------
-
-## Accessibility
-
-FloodRisk Philly is built with accessibility as a core requirement, not an afterthought:
-
-- ✅ Skip-to-content link (translated in Spanish mode)
-- ✅ Full ARIA labeling (roles, labels, live regions)
-- ✅ Keyboard navigable — full functionality without a mouse
-- ✅ Focus-visible outlines on all interactive elements
-- ✅ Screen reader compatible result announcements (`aria-live="polite"`)
-- ✅ Color contrast meets WCAG AA standards
-- ✅ Mobile-first responsive layout
-- ✅ `prefers-reduced-motion` respected — animations disabled for users who prefer it
-- ✅ Progress bar uses `aria-valuenow/min/max` for screen reader announcement
-- ✅ Checklist items use proper `label` associations
-
-Flood emergencies disproportionately harm Disabled people. An accessibility-first tool isn’t optional here.
-
------
-
-## Part of: Vibe Coding for Climate Action
-
-FloodRisk Philly is part of the **Vibe Coding for Climate Action** portfolio — open-source civic tech built for Philadelphia at the intersection of climate justice, disability justice, and transit equity:
-
-|Tool                                                                                |Description                                                        |
-|------------------------------------------------------------------------------------|-------------------------------------------------------------------|
-|[**SustAInable**](https://github.com/meyeringn/sustainable-heat)                    |XGBoost model predicting neighborhood heat illness risk by ZIP code|
-|[**UpLift**](https://github.com/meyeringn/uplift-transit)                           |Predictive maintenance model for SEPTA elevator/escalator failures |
-|[**CanopyWatch**](https://meyeringn.github.io/canopy-watch)                         |Urban tree canopy equity tool across 36 Philadelphia neighborhoods |
-|[**DCVI**](https://github.com/meyeringn/dcvi)                                       |Disability Climate Vulnerability Index                             |
-|[**Climate Civic Action Advisor**](https://github.com/meyeringn)                    |Claude-powered chatbot for Philadelphia residents                  |
-|[**Climate Equity Policy Simulator**](https://climate-equity-simulator.onrender.com)|AI equity scoring of policy proposals                              |
-|**FloodRisk Philly**                                                                |← You are here                                                     |
-
------
-
-## Roadmap
-
-**v1.0 — Shipped**
-
-- [x] Address geocoding via OpenStreetMap
-- [x] Three-strategy FEMA NFHL API integration (JSON → GeoJSON → JSONP fallback)
-- [x] FEMA flood zone classification (8 zone types)
-- [x] Neighborhood-to-zone mapping
-- [x] Impervious surface assessment
-- [x] Stormwater capacity rating
-- [x] Plain-language renter guidance
-- [x] Renter-specific resource links
-- [x] Full WCAG accessibility
-- [x] Leaflet.js map with FEMA WMS tile overlay
-
-**v1.1 — Current**
-
-- [x] Historical CSO event overlay (Philadelphia Water Department outfall clusters)
-- [x] Sewer system stress indicator (CSO coverage %, infrastructure age, overflow risk)
-- [x] Disability & evacuation access rating (floor risk, elevator dependency, SEPTA Access, emergency planning)
-- [x] Spanish language toggle (full EN/ES parity, saved preference)
-- [x] “What do I do now?” action checklist (risk-specific, three-phase, with progress tracking)
-- [x] Map overlay toggle controls (FEMA zones / CSO events)
-- [x] `prefers-reduced-motion` support
-
-**v2.0 — Future**
-
-- [ ] Combined flood + heat + canopy triple-risk score (integrating SustAInable and CanopyWatch data)
-- [ ] Comparison mode: side-by-side risk for two addresses (useful for housing decisions)
-- [ ] Live OpenDataPhilly 311 flood complaint data integration
-- [ ] Building-type-specific accessibility assessment (elevator inventory by address)
-- [ ] Additional language support (Vietnamese, Chinese, Khmer — Philadelphia’s other top renter languages)
-
------
-
-## Run It Locally
-
-No build tools. No dependencies. No install.
+With Python:
 
 ```bash
-git clone https://github.com/meyeringn/floodrisk-philly.git
-cd floodrisk-philly
-open index.html
+python -m http.server 8000
 ```
 
-Or open `index.html` in any modern browser. Everything runs client-side.
+Then open:
 
------
+```text
+http://localhost:8000
+```
 
-## Contributing
+## Deploy to GitHub Pages
 
-Contributions welcome — especially:
+1. Add the files using the structure shown above.
+2. Open the repository's **Settings**.
+3. Open **Pages**.
+4. Select deployment from the `main` branch and repository root.
+5. Save and wait for GitHub Pages to publish.
 
-- More precise neighborhood-level CSO coverage data
-- Expanded sewer stress data for additional Philadelphia neighborhoods
-- Translations (Vietnamese, Chinese, and Khmer are the next priorities for Philadelphia’s renter population)
-- Accessibility audits
-- Building-level elevator inventory data (to move from risk-level guidance to address-specific guidance)
+The existing public URL can remain:
 
-Open an issue or submit a PR at [github.com/meyeringn/floodrisk-philly](https://github.com/meyeringn/floodrisk-philly).
+```text
+https://meyeringn.github.io/floodrisk-philly/
+```
 
------
+## Required pre-release testing
 
-## License
+Test at minimum:
 
-MIT License. Use it, fork it, adapt it for your city.
+- a known address in a FEMA Special Flood Hazard Area;
+- a known address in a moderate mapped area;
+- an address outside mapped higher-hazard areas;
+- an address near a zone boundary;
+- an invalid address;
+- an address outside Philadelphia;
+- repeated searches for the same address;
+- a temporary FEMA failure;
+- English and Spanish;
+- keyboard-only operation;
+- VoiceOver on iPhone or macOS;
+- NVDA with Firefox or Chrome, when available;
+- 200% and 400% browser zoom;
+- a 320-pixel-wide viewport;
+- printing the renter flood plan; and
+- reduced-motion mode.
 
-If you build something based on this tool, a mention or link back is appreciated but not required.
+## Known limitations
 
------
+- A point lookup can be sensitive to geocoding accuracy and flood-zone boundaries.
+- FEMA mapping does not capture every urban-flooding or sewer-backup hazard.
+- Building condition, drainage, basement construction, and prior flood history require additional investigation.
+- The public Nominatim service has usage limits and is not intended for high-volume production traffic.
+- The site is educational and is not an insurance determination, engineering assessment, emergency warning, legal opinion, or guarantee.
 
-## About the Builder
+## Primary sources
 
-Built by **Nico Meyering** — Chairman of the Philadelphia Mayor’s Commission on People with Disabilities, VP of Growth & Partnerships at Net Impact Philadelphia, board member of Disability Pride Pennsylvania, and civic technologist at the intersection of disability equity, climate justice, and transit access.
+- FEMA Flood Map Service Center and National Flood Hazard Layer
+- City of Philadelphia Flood Management Program
+- Philadelphia Office of Emergency Management and ReadyPhiladelphia
+- Ready.gov
+- OpenStreetMap Nominatim and map data
 
-- GitHub: [@meyeringn](https://github.com/meyeringn)
-- LinkedIn: [Nico Meyering](https://linkedin.com/in/nicomeyering)
-- Part of the [Equitech Futures Civic Tech Institute 2026](https://equitechfutures.com) cohort
-- Climatebase Fellowship Cohort 10 (September 2026)
+## License and contributions
 
------
+Before accepting outside contributions, add a project license and contribution policy appropriate for the intended use.
 
-*Philadelphia, PA · Built with care for the people who need it most.*
+Changes affecting risk language, classifications, or data sources should include:
+
+- the source changed;
+- why it changed;
+- the date the source was checked;
+- test addresses used;
+- known limitations; and
+- whether previous results may be affected.
