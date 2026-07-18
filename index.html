@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#083d4c">
+  <meta name="description" content="Check a Philadelphia address for its FEMA flood zone and build a renter-focused, disability-aware preparedness plan.">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://meyeringn.github.io/floodrisk-philly/">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="FloodRisk Philly">
+  <meta property="og:description" content="Plain-language flood information and personalized preparedness guidance for Philadelphia renters.">
+  <meta property="og:url" content="https://meyeringn.github.io/floodrisk-philly/">
+  <meta property="og:site_name" content="FloodRisk Philly">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="FloodRisk Philly">
+  <meta name="twitter:description" content="Check a Philadelphia address and build a renter-focused flood preparedness plan.">
+  <title>FloodRisk Philly</title>
+
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfQ3Yn4LAkFhT20zH9jFQpYI3hG9QYwM="
+        crossorigin="">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to main content</a>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="FloodRisk Philly home">
+      <span class="brand-mark" aria-hidden="true">≈</span>
+      <span>FloodRisk Philly</span>
+    </a>
+
+    <nav aria-label="Primary navigation">
+      <a href="#how" data-i18n="navHow">How it works</a>
+      <a href="#why" data-i18n="navWhy">Why renters</a>
+      <button id="language-toggle" class="language-toggle" type="button"
+              aria-label="Cambiar a español">EN / ES</button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow" data-i18n="eyebrow">Flood information for Philadelphia renters</p>
+        <h1 data-i18n="headline">Know your risk before the storm.</h1>
+        <p class="hero-lede" data-i18n="lede">
+          Check an official FEMA flood zone, understand what the result can and cannot tell you,
+          and make a plan for your actual apartment.
+        </p>
+
+        <a class="hero-jump" href="#address" data-i18n="jumpToSearch">Check an address now</a>
+        <ul class="trust-list" aria-label="Tool features">
+          <li data-i18n="trust1">No login or saved address history</li>
+          <li data-i18n="trust2">English and Spanish</li>
+          <li data-i18n="trust3">Built for renters and Disabled residents</li>
+        </ul>
+      </div>
+
+      <div class="search-card" id="search-card">
+        <h2 data-i18n="searchTitle">Start with an address</h2>
+        <form id="address-form" novalidate>
+          <label for="address" data-i18n="addressLabel">Philadelphia street address</label>
+          <div class="search-row">
+            <input id="address" name="address" type="text" autocomplete="street-address"
+                   placeholder="1234 Market St" required>
+            <button id="search-button" type="submit" data-i18n="searchButton">Check risk</button>
+          </div>
+          <p class="field-help" data-i18n="addressHelp">
+            Use a full street address for the most precise result. Apartment numbers are ignored.
+          </p>
+        </form>
+
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+        <p class="privacy-note" data-i18n="privacy">
+          Privacy: Your search is sent to Philadelphia's public geocoder and FEMA to check the
+          mapped flood zone. FloodRisk Philly does not save it.
+        </p>
+      </div>
+    </section>
+
+    <section id="results" class="results" hidden aria-labelledby="results-title">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="resultsEyebrow">Your result</p>
+        <h2 id="results-title" data-i18n="resultsTitle">Flood information for this location</h2>
+        <p id="matched-address" class="matched-address"></p>
+      </div>
+
+
+      <div class="signal-strip" aria-label="Important renter context">
+        <div>
+          <strong data-i18n="signalMap">Mapped hazard</strong>
+          <span data-i18n="signalMapText">FEMA zone at the searched point</span>
+        </div>
+        <div>
+          <strong data-i18n="signalBuilding">Building risk</strong>
+          <span data-i18n="signalBuildingText">Floor, exits, drainage, and power</span>
+        </div>
+        <div>
+          <strong data-i18n="signalPersonal">Personal plan</strong>
+          <span data-i18n="signalPersonalText">Disability, medication, pets, and support</span>
+        </div>
+      </div>
+
+      <div class="result-grid">
+        <article class="result-card zone-card">
+          <p class="card-kicker" data-i18n="femaKicker">Official FEMA map</p>
+          <div class="zone-heading">
+            <span id="zone-badge" class="zone-badge">—</span>
+            <div>
+              <h3 id="zone-title">—</h3>
+              <p id="risk-level" class="risk-level">—</p>
+            </div>
+          </div>
+          <p id="zone-explanation"></p>
+          <p id="zone-caveat" class="card-note"></p>
+        </article>
+
+        <article class="result-card">
+          <p class="card-kicker" data-i18n="rainKicker">What the map may miss</p>
+          <h3 data-i18n="rainTitle">Heavy rain and sewer flooding</h3>
+          <p data-i18n="rainText">
+            FEMA maps focus mainly on river and coastal flooding. They do not fully capture
+            basement backups, overwhelmed street drains, or water entering during intense rainfall.
+          </p>
+        </article>
+
+        <article class="result-card">
+          <p class="card-kicker" data-i18n="rentKicker">For renters</p>
+          <h3 data-i18n="rentTitle">Your unit and building matter</h3>
+          <p data-i18n="rentText">
+            Floor level, exits, elevators, power needs, landlord maintenance, and where you keep
+            essential items can change your personal risk.
+          </p>
+        </article>
+
+        <article class="result-card">
+          <p class="card-kicker" data-i18n="placeKicker">Address context</p>
+          <h3 data-i18n="placeTitle">Matched location details</h3>
+          <dl class="place-details">
+            <div><dt data-i18n="zipLabel">ZIP code</dt><dd id="zip-code">—</dd></div>
+            <div><dt data-i18n="matchLabel">Address match</dt><dd id="match-score">—</dd></div>
+          </dl>
+          <p class="card-note" data-i18n="placeNote">These details come from Philadelphia's public address locator.</p>
+        </article>
+
+      </div>
+
+      <div class="map-panel">
+        <div>
+          <h3 data-i18n="mapTitle">Map of the searched location</h3>
+          <p data-i18n="mapHelp">
+            The marker shows the geocoded address. Use FEMA's official map link for a formal map review.
+          </p>
+        </div>
+        <a id="fema-link" class="secondary-button" href="https://msc.fema.gov/portal/home"
+           target="_blank" rel="noopener" data-i18n="femaLink">Open FEMA Map Service Center</a>
+        <div id="map" aria-label="Interactive map showing the searched address"></div>
+      </div>
+
+      <section class="planner" aria-labelledby="planner-title">
+        <div class="section-heading compact">
+          <p class="eyebrow" data-i18n="plannerEyebrow">Personalize your plan</p>
+          <h2 id="planner-title" data-i18n="plannerTitle">Tell us about your apartment</h2>
+          <p data-i18n="plannerIntro">
+            These answers stay in your browser and are used only to build the checklist below.
+          </p>
+        </div>
+
+        <form id="planner-form">
+          <fieldset>
+            <legend data-i18n="floorLegend">Where is your unit?</legend>
+            <label><input type="radio" name="floor" value="basement"> <span data-i18n="floorBasement">Basement or below grade</span></label>
+            <label><input type="radio" name="floor" value="ground"> <span data-i18n="floorGround">Ground or garden level</span></label>
+            <label><input type="radio" name="floor" value="upper"> <span data-i18n="floorUpper">Second floor or higher</span></label>
+            <label><input type="radio" name="floor" value="unknown" checked> <span data-i18n="notSure">Not sure</span></label>
+          </fieldset>
+
+          <fieldset>
+            <legend data-i18n="needsLegend">What should the plan account for?</legend>
+            <label><input type="checkbox" name="needs" value="elevator"> <span data-i18n="needElevator">I depend on an elevator or cannot use stairs</span></label>
+            <label><input type="checkbox" name="needs" value="power"> <span data-i18n="needPower">I use powered medical or accessibility equipment</span></label>
+            <label><input type="checkbox" name="needs" value="medication"> <span data-i18n="needMedication">I need temperature-sensitive or essential medication</span></label>
+            <label><input type="checkbox" name="needs" value="communication"> <span data-i18n="needCommunication">I need accessible alerts or communication support</span></label>
+            <label><input type="checkbox" name="needs" value="vision"> <span data-i18n="needVision">I am blind or have low vision</span></label>
+            <label><input type="checkbox" name="needs" value="hearing"> <span data-i18n="needHearing">I am Deaf or hard of hearing</span></label>
+            <label><input type="checkbox" name="needs" value="alone"> <span data-i18n="needAlone">I may be alone during an emergency</span></label>
+            <label><input type="checkbox" name="needs" value="animal"> <span data-i18n="needAnimal">I have a pet or service animal</span></label>
+          </fieldset>
+
+          <button type="submit" data-i18n="buildPlan">Build my checklist</button>
+        </form>
+      </section>
+
+      <section id="checklist-section" class="checklist-section" hidden aria-labelledby="checklist-title">
+        <div class="checklist-header">
+          <div>
+            <p class="eyebrow" data-i18n="checklistEyebrow">What to do next</p>
+            <h2 id="checklist-title" data-i18n="checklistTitle">Your flood preparedness checklist</h2>
+          </div>
+          <div class="progress-wrap">
+            <span id="progress-text">0%</span>
+            <div class="progress-track" role="progressbar" aria-label="Checklist completion"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span id="progress-bar"></span>
+            </div>
+          </div>
+        </div>
+        <p class="local-save-note" data-i18n="localSaveNote">Checklist progress is saved only on this device.</p>
+        <div id="checklist-groups" class="checklist-groups"></div>
+        <div class="plan-actions">
+          <button id="reset-button" class="secondary-button" type="button" data-i18n="resetPlan">Reset checklist</button>
+          <button id="print-button" class="secondary-button" type="button" data-i18n="printPlan">Print or save plan</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="how" class="content-section">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="howEyebrow">How it works</p>
+        <h2 data-i18n="howTitle">Three kinds of information, kept separate.</h2>
+      </div>
+      <div class="steps">
+        <article><span>1</span><h3 data-i18n="step1Title">Official mapped hazard</h3><p data-i18n="step1Text">We query FEMA's National Flood Hazard Layer at the searched point and report the zone returned.</p></article>
+        <article><span>2</span><h3 data-i18n="step2Title">Local limits and context</h3><p data-i18n="step2Text">We explain what the federal map may miss, including sewer backups, intense rain, and building-specific conditions.</p></article>
+        <article><span>3</span><h3 data-i18n="step3Title">Your renter plan</h3><p data-i18n="step3Text">You can add floor, exit, disability, power, medication, and animal information to personalize preparedness guidance.</p></article>
+      </div>
+    </section>
+
+    <section id="why" class="content-section split-section">
+      <div>
+        <p class="eyebrow" data-i18n="whyEyebrow">Why this exists</p>
+        <h2 data-i18n="whyTitle">Flood tools rarely start with renters.</h2>
+      </div>
+      <p data-i18n="whyText">
+        Renters may not control drainage, building repairs, elevators, or emergency procedures,
+        but they still face damaged belongings, displacement, missed work, and inaccessible exits.
+        FloodRisk Philly turns a map result into practical questions and actions.
+      </p>
+    </section>
+
+
+    <section class="content-section resource-section" aria-labelledby="resources-title">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="resourcesEyebrow">Official resources</p>
+        <h2 id="resources-title" data-i18n="resourcesTitle">Save these before you need them.</h2>
+      </div>
+      <div class="resource-grid">
+        <a class="resource-card" href="https://www.phila.gov/departments/oem/programs/readyphiladelphia/" target="_blank" rel="noopener">
+          <strong data-i18n="readyTitle">ReadyPhiladelphia alerts</strong>
+          <span data-i18n="readyText">Get official emergency and severe-weather notifications.</span>
+        </a>
+        <a class="resource-card" href="https://www.phila.gov/programs/flood-management-program/resources/" target="_blank" rel="noopener">
+          <strong data-i18n="cityFloodTitle">City flood resources</strong>
+          <span data-i18n="cityFloodText">Preparedness, maps, recovery guidance, and local contacts.</span>
+        </a>
+        <a class="resource-card" href="https://water.phila.gov/drops/water-emergencies/" target="_blank" rel="noopener">
+          <strong data-i18n="waterTitle">Water emergencies</strong>
+          <span data-i18n="waterText">Information for neighborhood flooding, basement water, and water-main breaks.</span>
+        </a>
+        <a class="resource-card" href="https://www.phila.gov/documents/reported-flood-damages-in-philadelphia-map/" target="_blank" rel="noopener">
+          <strong data-i18n="damageMapTitle">Reported flood damages map</strong>
+          <span data-i18n="damageMapText">See reported Philadelphia flood damage from 2014–2024, including rainfall and drainage-related flooding beyond FEMA zones.</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="limitation">
+      <h2 data-i18n="limitTitle">Important limitation</h2>
+      <p data-i18n="limitText">
+        FloodRisk Philly provides educational information and renter preparedness guidance. It is
+        not an insurance determination, engineering assessment, emergency warning, legal opinion,
+        or guarantee that a property will or will not flood.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      <strong>FloodRisk Philly</strong>
+      <p data-i18n="footerTag">Plain-language flood information for Philadelphia renters.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#how" data-i18n="methodology">Methodology</a>
+      <a href="#top" data-i18n="privacyLink">Privacy</a>
+      <a href="https://github.com/meyeringn/floodrisk-philly" target="_blank" rel="noopener" data-i18n="source">View source</a>
+    </div>
+  </footer>
+
+  <noscript>
+    <p class="noscript">FloodRisk Philly needs JavaScript to check an address and build a personalized plan.</p>
+  </noscript>
+</body>
+</html>
