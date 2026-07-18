@@ -1,0 +1,1472 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#083d4c">
+  <meta name="description" content="Plain-language flood risk and preparedness information for Philadelphia renters, with disability-aware planning guidance.">
+  <title>FloodRisk Philly</title>
+
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfQ3Yn4LAkFhT20zH9jFQpYI3hG9QYwM="
+        crossorigin="">
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin=""></script>
+<style>
+:root {
+  --ink: #102f38;
+  --muted: #527079;
+  --deep: #083d4c;
+  --teal: #0b716f;
+  --mint: #c9f2e7;
+  --pale: #eef8f5;
+  --cream: #fffdf7;
+  --white: #ffffff;
+  --line: #c9dbd8;
+  --warning: #8a4f00;
+  --danger: #9b2c2c;
+  --success: #176b4a;
+  --shadow: 0 18px 55px rgba(8, 61, 76, .11);
+  --radius: 22px;
+  --max: 1180px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  color: var(--ink);
+  background: var(--cream);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.6;
+}
+button, input { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+a { color: var(--deep); }
+img { max-width: 100%; }
+
+.skip-link {
+  position: fixed;
+  top: .75rem;
+  left: .75rem;
+  z-index: 9999;
+  padding: .75rem 1rem;
+  background: var(--white);
+  border: 3px solid var(--deep);
+  border-radius: 8px;
+  transform: translateY(-150%);
+}
+.skip-link:focus { transform: translateY(0); }
+
+.site-header {
+  min-height: 74px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem max(1rem, calc((100vw - var(--max)) / 2));
+  background: rgba(255,253,247,.94);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  backdrop-filter: blur(12px);
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  font-weight: 850;
+  text-decoration: none;
+  letter-spacing: -.02em;
+}
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  color: var(--white);
+  background: var(--teal);
+  border-radius: 50%;
+  font-size: 1.45rem;
+}
+.site-header nav { display: flex; align-items: center; gap: 1rem; }
+.site-header nav a {
+  font-weight: 700;
+  text-decoration: none;
+}
+.language-toggle {
+  color: var(--deep);
+  background: var(--white);
+  border: 2px solid var(--deep);
+  border-radius: 999px;
+  padding: .5rem .85rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+main > section, footer {
+  width: min(var(--max), calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: 1.08fr .92fr;
+  gap: clamp(2rem, 5vw, 5rem);
+  align-items: center;
+  min-height: 650px;
+  padding-block: clamp(3rem, 8vw, 7rem);
+}
+.eyebrow {
+  margin: 0 0 .45rem;
+  color: var(--teal);
+  font-size: .82rem;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+h1, h2, h3 {
+  margin-top: 0;
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+h1 {
+  max-width: 11ch;
+  margin-bottom: 1.25rem;
+  font-size: clamp(3rem, 7vw, 6.25rem);
+}
+h2 { font-size: clamp(2rem, 4vw, 3.25rem); }
+h3 { font-size: 1.35rem; }
+.hero-lede {
+  max-width: 62ch;
+  color: var(--muted);
+  font-size: clamp(1.1rem, 2vw, 1.3rem);
+}
+.trust-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .65rem;
+  padding: 0;
+  margin: 1.6rem 0 0;
+  list-style: none;
+}
+.trust-list li {
+  padding: .45rem .75rem;
+  background: var(--pale);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: .9rem;
+}
+
+.search-card, .result-card, .map-panel, .planner, .checklist-section {
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.search-card { padding: clamp(1.3rem, 4vw, 2.3rem); }
+.search-card h2 { font-size: 1.8rem; }
+label, legend { font-weight: 750; }
+.search-row { display: flex; gap: .7rem; margin-top: .45rem; }
+input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  border: 2px solid #8eaaa8;
+  border-radius: 12px;
+  padding: .9rem 1rem;
+}
+input[type="text"]:focus {
+  border-color: var(--teal);
+  outline: 3px solid rgba(11,113,111,.2);
+}
+button, .secondary-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  padding: .75rem 1.05rem;
+  color: var(--white);
+  background: var(--deep);
+  border: 2px solid var(--deep);
+  border-radius: 12px;
+  font-weight: 850;
+  text-decoration: none;
+  cursor: pointer;
+}
+button:hover, .secondary-button:hover { filter: brightness(1.12); }
+button:disabled { opacity: .65; cursor: wait; }
+.secondary-button {
+  color: var(--deep);
+  background: var(--white);
+}
+.field-help, .privacy-note, .card-note, .map-panel p, .matched-address {
+  color: var(--muted);
+}
+.field-help, .privacy-note { font-size: .9rem; }
+.status { min-height: 1.6rem; margin-top: .8rem; font-weight: 750; }
+.status.error { color: var(--danger); }
+.status.success { color: var(--success); }
+
+.results { padding-block: 2.5rem 6rem; }
+.section-heading { max-width: 760px; margin-bottom: 2rem; }
+.section-heading h2 { margin-bottom: .8rem; }
+.section-heading.compact h2 { font-size: clamp(1.8rem, 3vw, 2.5rem); }
+.matched-address { font-size: 1.05rem; font-weight: 700; }
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.result-card { padding: 1.5rem; }
+.zone-card { border-top: 7px solid var(--teal); }
+.zone-heading { display: flex; gap: 1rem; align-items: center; }
+.zone-badge {
+  display: grid;
+  place-items: center;
+  min-width: 76px;
+  height: 76px;
+  padding: .3rem;
+  color: var(--white);
+  background: var(--teal);
+  border-radius: 16px;
+  font-weight: 950;
+  text-align: center;
+}
+.zone-badge.high { background: var(--danger); }
+.zone-badge.moderate { background: var(--warning); }
+.zone-badge.lower { background: var(--success); }
+.zone-badge.unknown { background: #5f6770; }
+.risk-level { margin: .2rem 0 0; font-weight: 850; }
+.card-kicker {
+  color: var(--teal);
+  font-size: .78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+}
+
+.map-panel {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1rem;
+  align-items: start;
+  margin-top: 1rem;
+  padding: 1.5rem;
+}
+#map {
+  grid-column: 1 / -1;
+  height: 420px;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #dfecea;
+}
+.leaflet-control-attribution { font-size: 10px; }
+
+.planner { margin-top: 1rem; padding: clamp(1.3rem, 4vw, 2.2rem); }
+#planner-form {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr;
+  gap: 1rem;
+}
+fieldset {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 1rem;
+}
+legend { padding-inline: .35rem; }
+fieldset label {
+  display: flex;
+  gap: .65rem;
+  align-items: flex-start;
+  padding: .45rem 0;
+  font-weight: 550;
+}
+input[type="radio"], input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: 0 0 auto;
+  margin-top: .2rem;
+  accent-color: var(--teal);
+}
+#planner-form > button { align-self: end; justify-self: start; }
+
+.checklist-section { margin-top: 1rem; padding: clamp(1.3rem, 4vw, 2.2rem); }
+.checklist-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  align-items: center;
+}
+.progress-wrap { min-width: 190px; text-align: right; font-weight: 850; }
+.progress-track {
+  width: 190px;
+  height: 12px;
+  margin-top: .35rem;
+  background: #dbe8e5;
+  border-radius: 999px;
+  overflow: hidden;
+}
+#progress-bar {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--teal);
+  transition: width .25s ease;
+}
+.checklist-groups {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.checklist-group {
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  padding: 1rem;
+}
+.checklist-group h3 { font-size: 1.15rem; }
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .7rem;
+  padding: .55rem 0;
+  font-weight: 550;
+}
+.checklist-item + .checklist-item { border-top: 1px solid #e5efed; }
+
+.content-section { padding-block: clamp(4rem, 8vw, 7rem); }
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.steps article {
+  padding: 1.6rem;
+  background: var(--pale);
+  border-radius: var(--radius);
+}
+.steps article > span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 1.2rem;
+  color: var(--white);
+  background: var(--teal);
+  border-radius: 50%;
+  font-weight: 900;
+}
+.split-section {
+  display: grid;
+  grid-template-columns: .85fr 1.15fr;
+  gap: 3rem;
+  align-items: start;
+  border-top: 1px solid var(--line);
+}
+.split-section > p { margin-top: 0; color: var(--muted); font-size: 1.25rem; }
+.limitation {
+  margin-bottom: 5rem;
+  padding: 1.6rem;
+  color: #503000;
+  background: #fff3d9;
+  border: 1px solid #e6c77e;
+  border-radius: var(--radius);
+}
+.limitation h2 { font-size: 1.45rem; }
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-block: 2.5rem;
+  border-top: 1px solid var(--line);
+}
+footer p { margin: .2rem 0; color: var(--muted); }
+.footer-links { display: flex; flex-wrap: wrap; gap: 1rem; }
+.noscript { padding: 1rem; background: #fff3d9; text-align: center; }
+
+:focus-visible {
+  outline: 4px solid #ffbf47;
+  outline-offset: 3px;
+}
+
+@media (max-width: 850px) {
+  .site-header nav a { display: none; }
+  .hero { grid-template-columns: 1fr; min-height: auto; }
+  h1 { font-size: clamp(3.1rem, 15vw, 5rem); }
+  .result-grid, .steps, .checklist-groups { grid-template-columns: 1fr; }
+  #planner-form { grid-template-columns: 1fr; }
+  .split-section { grid-template-columns: 1fr; gap: 1rem; }
+  .map-panel { grid-template-columns: 1fr; }
+  .map-panel .secondary-button { justify-self: start; }
+  #map { grid-column: 1; height: 350px; }
+  .checklist-header { align-items: flex-start; flex-direction: column; }
+  .progress-wrap, .progress-track { width: 100%; }
+  footer { flex-direction: column; }
+}
+
+@media (max-width: 560px) {
+  .site-header { min-height: 64px; }
+  .brand-mark { width: 30px; height: 30px; }
+  .hero { padding-top: 2.5rem; }
+  .search-row { flex-direction: column; }
+  .search-row button { width: 100%; }
+  #map { height: 300px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+@media print {
+  .site-header, .hero, .map-panel, .planner, #how, #why, .limitation, footer,
+  #print-button, .result-grid { display: none !important; }
+  body { background: white; }
+  .results, .checklist-section { width: 100%; padding: 0; box-shadow: none; border: 0; }
+  .checklist-section { display: block !important; }
+}
+
+
+.sample-addresses {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .7rem;
+  margin-top: .8rem;
+  color: var(--muted);
+  font-size: .9rem;
+}
+.text-button {
+  min-height: auto;
+  padding: 0;
+  color: var(--teal);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  text-decoration: underline;
+  text-underline-offset: .18em;
+}
+.text-button:hover { filter: none; text-decoration-thickness: 2px; }
+.plan-actions { display: flex; flex-wrap: wrap; gap: .65rem; }
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.resource-card {
+  display: flex;
+  flex-direction: column;
+  gap: .45rem;
+  min-height: 150px;
+  padding: 1.35rem;
+  color: var(--ink);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  text-decoration: none;
+}
+.resource-card:hover { border-color: var(--teal); transform: translateY(-2px); }
+.resource-card strong { font-size: 1.2rem; color: var(--deep); }
+.resource-card span { color: var(--muted); }
+@media (max-width: 700px) {
+  .resource-grid { grid-template-columns: 1fr; }
+  .plan-actions { flex-direction: column; }
+  .plan-actions .secondary-button { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resource-card:hover { transform: none; }
+}
+
+</style>
+</head>
+<body>
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to main content</a>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="FloodRisk Philly home">
+      <span class="brand-mark" aria-hidden="true">≈</span>
+      <span>FloodRisk Philly</span>
+    </a>
+
+    <nav aria-label="Primary navigation">
+      <a href="#how" data-i18n="navHow">How it works</a>
+      <a href="#why" data-i18n="navWhy">Why renters</a>
+      <button id="language-toggle" class="language-toggle" type="button"
+              aria-label="Cambiar a español">EN / ES</button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section id="top" class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow" data-i18n="eyebrow">Flood information for Philadelphia renters</p>
+        <h1 data-i18n="headline">Know your risk before the storm.</h1>
+        <p class="hero-lede" data-i18n="lede">
+          Check an official FEMA flood zone, understand what the result can and cannot tell you,
+          and make a plan for your actual apartment.
+        </p>
+
+        <ul class="trust-list" aria-label="Tool features">
+          <li data-i18n="trust1">No login or saved address history</li>
+          <li data-i18n="trust2">English and Spanish</li>
+          <li data-i18n="trust3">Built for renters and Disabled residents</li>
+        </ul>
+      </div>
+
+      <div class="search-card">
+        <h2 data-i18n="searchTitle">Start with an address</h2>
+        <form id="address-form" novalidate>
+          <label for="address" data-i18n="addressLabel">Philadelphia street address</label>
+          <div class="search-row">
+            <input id="address" name="address" type="text" autocomplete="street-address"
+                   placeholder="1234 Market St" required>
+            <button id="search-button" type="submit" data-i18n="searchButton">Check risk</button>
+          </div>
+          <p class="field-help" data-i18n="addressHelp">
+            Use a full street address for the most precise result. Apartment numbers are ignored.
+          </p>
+        </form>
+
+
+          <div class="sample-addresses" aria-label="Example Philadelphia addresses">
+            <span data-i18n="tryExample">Try an example:</span>
+            <button class="text-button sample-address" type="button" data-address="1400 John F Kennedy Blvd">Center City</button>
+            <button class="text-button sample-address" type="button" data-address="4101 Ridge Ave">East Falls</button>
+            <button class="text-button sample-address" type="button" data-address="1 Boathouse Row">Schuylkill riverfront</button>
+          </div>
+
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+        <p class="privacy-note" data-i18n="privacy">
+          Privacy: Your search is sent to Philadelphia's public geocoder and FEMA to check the
+          mapped flood zone. FloodRisk Philly does not save it.
+        </p>
+      </div>
+    </section>
+
+    <section id="results" class="results" hidden aria-labelledby="results-title">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="resultsEyebrow">Your result</p>
+        <h2 id="results-title" tabindex="-1" data-i18n="resultsTitle">Flood information for this location</h2>
+        <p id="matched-address" class="matched-address"></p>
+      </div>
+
+      <div class="result-grid">
+        <article class="result-card zone-card">
+          <p class="card-kicker" data-i18n="femaKicker">Official FEMA map</p>
+          <div class="zone-heading">
+            <span id="zone-badge" class="zone-badge">—</span>
+            <div>
+              <h3 id="zone-title">—</h3>
+              <p id="risk-level" class="risk-level">—</p>
+            </div>
+          </div>
+          <p id="zone-explanation"></p>
+          <p id="zone-caveat" class="card-note"></p>
+        </article>
+
+        <article class="result-card">
+          <p class="card-kicker" data-i18n="rainKicker">What the map may miss</p>
+          <h3 data-i18n="rainTitle">Heavy rain and sewer flooding</h3>
+          <p data-i18n="rainText">
+            FEMA maps focus mainly on river and coastal flooding. They do not fully capture
+            basement backups, overwhelmed street drains, or water entering during intense rainfall.
+          </p>
+        </article>
+
+        <article class="result-card">
+          <p class="card-kicker" data-i18n="rentKicker">For renters</p>
+          <h3 data-i18n="rentTitle">Your unit and building matter</h3>
+          <p data-i18n="rentText">
+            Floor level, exits, elevators, power needs, landlord maintenance, and where you keep
+            essential items can change your personal risk.
+          </p>
+        </article>
+      </div>
+
+      <div class="map-panel">
+        <div>
+          <h3 data-i18n="mapTitle">Map of the searched location</h3>
+          <p data-i18n="mapHelp">
+            The marker shows the geocoded address. Use FEMA's official map link for a formal map review.
+          </p>
+        </div>
+        <a id="fema-link" class="secondary-button" href="https://msc.fema.gov/portal/home"
+           target="_blank" rel="noopener" data-i18n="femaLink">Open FEMA Map Service Center</a>
+        <div id="map" aria-label="Interactive map showing the searched address"></div>
+      </div>
+
+      <section class="planner" aria-labelledby="planner-title">
+        <div class="section-heading compact">
+          <p class="eyebrow" data-i18n="plannerEyebrow">Personalize your plan</p>
+          <h2 id="planner-title" data-i18n="plannerTitle">Tell us about your apartment</h2>
+          <p data-i18n="plannerIntro">
+            These answers stay in your browser and are used only to build the checklist below.
+          </p>
+        </div>
+
+        <form id="planner-form">
+          <fieldset>
+            <legend data-i18n="floorLegend">Where is your unit?</legend>
+            <label><input type="radio" name="floor" value="basement"> <span data-i18n="floorBasement">Basement or below grade</span></label>
+            <label><input type="radio" name="floor" value="ground"> <span data-i18n="floorGround">Ground or garden level</span></label>
+            <label><input type="radio" name="floor" value="upper"> <span data-i18n="floorUpper">Second floor or higher</span></label>
+            <label><input type="radio" name="floor" value="unknown" checked> <span data-i18n="notSure">Not sure</span></label>
+          </fieldset>
+
+          <fieldset>
+            <legend data-i18n="needsLegend">What should the plan account for?</legend>
+            <label><input type="checkbox" name="needs" value="elevator"> <span data-i18n="needElevator">I depend on an elevator or cannot use stairs</span></label>
+            <label><input type="checkbox" name="needs" value="power"> <span data-i18n="needPower">I use powered medical or accessibility equipment</span></label>
+            <label><input type="checkbox" name="needs" value="medication"> <span data-i18n="needMedication">I need temperature-sensitive or essential medication</span></label>
+            <label><input type="checkbox" name="needs" value="communication"> <span data-i18n="needCommunication">I need accessible alerts or communication support</span></label>
+            <label><input type="checkbox" name="needs" value="animal"> <span data-i18n="needAnimal">I have a pet or service animal</span></label>
+          </fieldset>
+
+          <button type="submit" data-i18n="buildPlan">Build my checklist</button>
+        </form>
+      </section>
+
+      <section id="checklist-section" class="checklist-section" hidden aria-labelledby="checklist-title">
+        <div class="checklist-header">
+          <div>
+            <p class="eyebrow" data-i18n="checklistEyebrow">What to do next</p>
+            <h2 id="checklist-title" data-i18n="checklistTitle">Your flood preparedness checklist</h2>
+          </div>
+          <div class="progress-wrap">
+            <span id="progress-text">0%</span>
+            <div class="progress-track" role="progressbar" aria-label="Checklist completion"
+                 aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span id="progress-bar"></span>
+            </div>
+          </div>
+        </div>
+        <div id="checklist-groups" class="checklist-groups"></div>
+        <div class="plan-actions">
+          <button id="copy-button" class="secondary-button" type="button" data-i18n="copyPlan">Copy plan</button>
+          <button id="download-button" class="secondary-button" type="button" data-i18n="downloadPlan">Download text plan</button>
+          <button id="print-button" class="secondary-button" type="button" data-i18n="printPlan">Print or save plan</button>
+        </div>
+      </section>
+    </section>
+
+    <section id="how" class="content-section">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="howEyebrow">How it works</p>
+        <h2 data-i18n="howTitle">Three kinds of information, kept separate.</h2>
+      </div>
+      <div class="steps">
+        <article><span>1</span><h3 data-i18n="step1Title">Official mapped hazard</h3><p data-i18n="step1Text">We query FEMA's National Flood Hazard Layer at the searched point and report the zone returned.</p></article>
+        <article><span>2</span><h3 data-i18n="step2Title">Local limits and context</h3><p data-i18n="step2Text">We explain what the federal map may miss, including sewer backups, intense rain, and building-specific conditions.</p></article>
+        <article><span>3</span><h3 data-i18n="step3Title">Your renter plan</h3><p data-i18n="step3Text">You can add floor, exit, disability, power, medication, and animal information to personalize preparedness guidance.</p></article>
+      </div>
+    </section>
+
+    <section id="why" class="content-section split-section">
+      <div>
+        <p class="eyebrow" data-i18n="whyEyebrow">Why this exists</p>
+        <h2 data-i18n="whyTitle">Flood tools rarely start with renters.</h2>
+      </div>
+      <p data-i18n="whyText">
+        Renters may not control drainage, building repairs, elevators, or emergency procedures,
+        but they still face damaged belongings, displacement, missed work, and inaccessible exits.
+        FloodRisk Philly turns a map result into practical questions and actions.
+      </p>
+    </section>
+
+
+    <section class="content-section resources-section" aria-labelledby="resources-title">
+      <div class="section-heading">
+        <p class="eyebrow" data-i18n="resourcesEyebrow">Official help</p>
+        <h2 id="resources-title" data-i18n="resourcesTitle">Philadelphia resources worth saving now.</h2>
+        <p data-i18n="resourcesIntro">These links open official City, Water Department, or FEMA pages in a new tab.</p>
+      </div>
+      <div class="resource-grid">
+        <a class="resource-card" href="https://www.phila.gov/departments/oem/programs/readyphiladelphia/" target="_blank" rel="noopener">
+          <strong data-i18n="resourceAlerts">ReadyPhiladelphia alerts</strong>
+          <span data-i18n="resourceAlertsText">Free emergency and severe-weather alerts, with multiple language and delivery options.</span>
+        </a>
+        <a class="resource-card" href="https://www.phila.gov/programs/flood-management-program/resources/" target="_blank" rel="noopener">
+          <strong data-i18n="resourceFlood">City flood resources</strong>
+          <span data-i18n="resourceFloodText">Preparedness, recovery, maps, and flood-management information from the City.</span>
+        </a>
+        <a class="resource-card" href="https://www.phila.gov/departments/oem/ready-or-not/how-to-get-ready/prepare-for-an-emergency/plan-for-everyone/" target="_blank" rel="noopener">
+          <strong data-i18n="resourceAccess">Plan for access needs</strong>
+          <span data-i18n="resourceAccessText">City guidance for medication, mobility, communication, pets, and personal support networks.</span>
+        </a>
+        <a class="resource-card" href="https://water.phila.gov/drops/water-emergencies/" target="_blank" rel="noopener">
+          <strong data-i18n="resourceWater">Report a water emergency</strong>
+          <span data-i18n="resourceWaterText">Philadelphia Water Department information for neighborhood flooding, basement water, and main breaks.</span>
+        </a>
+      </div>
+    </section>
+
+    <section class="limitation">
+      <h2 data-i18n="limitTitle">Important limitation</h2>
+      <p data-i18n="limitText">
+        FloodRisk Philly provides educational information and renter preparedness guidance. It is
+        not an insurance determination, engineering assessment, emergency warning, legal opinion,
+        or guarantee that a property will or will not flood.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <div>
+      <strong>FloodRisk Philly</strong>
+      <p data-i18n="footerTag">Plain-language flood information for Philadelphia renters.</p>
+    </div>
+    <div class="footer-links">
+      <a href="#how" data-i18n="methodology">Methodology</a>
+      <a href="#top" data-i18n="privacyLink">Privacy</a>
+      <a href="https://github.com/meyeringn/floodrisk-philly" target="_blank" rel="noopener" data-i18n="source">View source</a>
+    </div>
+  </footer>
+
+  <noscript>
+    <p class="noscript">FloodRisk Philly needs JavaScript to check an address and build a personalized plan.</p>
+  </noscript>
+<script>
+(() => {
+  "use strict";
+
+  const PHILLY_BOUNDS = {
+    minLat: 39.867,
+    maxLat: 40.138,
+    minLng: -75.281,
+    maxLng: -74.955
+  };
+
+  const PHILLY_GEOCODER =
+    "https://citygeo-geocoder-pub.databridge.phila.gov/arcgis/rest/services/Geocoders/Address_Locator/GeocodeServer/findAddressCandidates";
+
+  const FEMA_LAYER_URL =
+    "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer/28/query";
+
+  const translations = {
+    en: {
+      skip: "Skip to main content",
+      navHow: "How it works",
+      navWhy: "Why renters",
+      eyebrow: "Flood information for Philadelphia renters",
+      headline: "Know your risk before the storm.",
+      lede: "Check an official FEMA flood zone, understand what the result can and cannot tell you, and make a plan for your actual apartment.",
+      trust1: "No login or saved address history",
+      trust2: "English and Spanish",
+      trust3: "Built for renters and Disabled residents",
+      searchTitle: "Start with an address",
+      addressLabel: "Philadelphia street address",
+      addressHelp: "Use a full street address for the most precise result. Apartment numbers are ignored.",
+      searchButton: "Check risk",
+      tryExample: "Try an example:",
+      copyPlan: "Copy plan",
+      downloadPlan: "Download text plan",
+      resourcesEyebrow: "Official help",
+      resourcesTitle: "Philadelphia resources worth saving now.",
+      resourcesIntro: "These links open official City, Water Department, or FEMA pages in a new tab.",
+      resourceAlerts: "ReadyPhiladelphia alerts",
+      resourceAlertsText: "Free emergency and severe-weather alerts, with multiple language and delivery options.",
+      resourceFlood: "City flood resources",
+      resourceFloodText: "Preparedness, recovery, maps, and flood-management information from the City.",
+      resourceAccess: "Plan for access needs",
+      resourceAccessText: "City guidance for medication, mobility, communication, pets, and personal support networks.",
+      resourceWater: "Report a water emergency",
+      resourceWaterText: "Philadelphia Water Department information for neighborhood flooding, basement water, and main breaks.",
+      privacy: "Privacy: Your search is sent to Philadelphia's public geocoder and FEMA to check the mapped flood zone. FloodRisk Philly does not save it or use analytics.",
+      resultsEyebrow: "Your result",
+      resultsTitle: "Flood information for this location",
+      femaKicker: "Official FEMA map",
+      rainKicker: "What the map may miss",
+      rainTitle: "Heavy rain and sewer flooding",
+      rainText: "FEMA maps focus mainly on river and coastal flooding. They do not fully capture basement backups, overwhelmed street drains, or water entering during intense rainfall.",
+      rentKicker: "For renters",
+      rentTitle: "Your unit and building matter",
+      rentText: "Floor level, exits, elevators, power needs, landlord maintenance, and where you keep essential items can change your personal risk.",
+      mapTitle: "Map of the searched location",
+      mapHelp: "The marker shows the geocoded address. Use FEMA's official map link for a formal map review.",
+      femaLink: "Open FEMA Map Service Center",
+      plannerEyebrow: "Personalize your plan",
+      plannerTitle: "Tell us about your apartment",
+      plannerIntro: "These answers stay in your browser and are used only to build the checklist below.",
+      floorLegend: "Where is your unit?",
+      floorBasement: "Basement or below grade",
+      floorGround: "Ground or garden level",
+      floorUpper: "Second floor or higher",
+      notSure: "Not sure",
+      needsLegend: "What should the plan account for?",
+      needElevator: "I depend on an elevator or cannot use stairs",
+      needPower: "I use powered medical or accessibility equipment",
+      needMedication: "I need temperature-sensitive or essential medication",
+      needCommunication: "I need accessible alerts or communication support",
+      needAnimal: "I have a pet or service animal",
+      buildPlan: "Build my checklist",
+      checklistEyebrow: "What to do next",
+      checklistTitle: "Your flood preparedness checklist",
+      printPlan: "Print or save plan",
+      howEyebrow: "How it works",
+      howTitle: "Three kinds of information, kept separate.",
+      step1Title: "Official mapped hazard",
+      step1Text: "We query FEMA's National Flood Hazard Layer at the searched point and report the zone returned.",
+      step2Title: "Local limits and context",
+      step2Text: "We explain what the federal map may miss, including sewer backups, intense rain, and building-specific conditions.",
+      step3Title: "Your renter plan",
+      step3Text: "You can add floor, exit, disability, power, medication, and animal information to personalize preparedness guidance.",
+      whyEyebrow: "Why this exists",
+      whyTitle: "Flood tools rarely start with renters.",
+      whyText: "Renters may not control drainage, building repairs, elevators, or emergency procedures, but they still face damaged belongings, displacement, missed work, and inaccessible exits. FloodRisk Philly turns a map result into practical questions and actions.",
+      limitTitle: "Important limitation",
+      limitText: "FloodRisk Philly provides educational information and renter preparedness guidance. It is not an insurance determination, engineering assessment, emergency warning, legal opinion, or guarantee that a property will or will not flood.",
+      footerTag: "Plain-language flood information for Philadelphia renters.",
+      methodology: "Methodology",
+      privacyLink: "Privacy",
+      source: "View source",
+      searching: "Checking the address and FEMA map…",
+      noAddress: "Enter a Philadelphia street address.",
+      noMatch: "I couldn't find that address in Philadelphia. Check the street number and spelling.",
+      outsidePhilly: "That result appears to be outside Philadelphia. This tool currently supports Philadelphia addresses only.",
+      femaUnavailable: "The address was found, but FEMA's service did not return a zone. Try again later or open the official FEMA map.",
+      found: "Address found. Your flood information is ready.",
+      networkError: "The lookup service did not respond. Check your connection and try again.",
+      rightNow: "Right now",
+      thisWeek: "This week",
+      beforeStorm: "Before storm season",
+      complete: "complete"
+    },
+    es: {
+      skip: "Saltar al contenido principal",
+      navHow: "Cómo funciona",
+      navWhy: "Por qué inquilinos",
+      eyebrow: "Información sobre inundaciones para inquilinos de Filadelfia",
+      headline: "Conoce tu riesgo antes de la tormenta.",
+      lede: "Consulta una zona oficial de inundación de FEMA, entiende lo que el resultado puede y no puede decirte, y crea un plan para tu apartamento.",
+      trust1: "Sin cuenta ni historial de direcciones",
+      trust2: "Inglés y español",
+      trust3: "Diseñado para inquilinos y residentes con discapacidad",
+      searchTitle: "Comienza con una dirección",
+      addressLabel: "Dirección en Filadelfia",
+      addressHelp: "Usa una dirección completa para obtener el resultado más preciso. Se ignoran los números de apartamento.",
+      searchButton: "Consultar riesgo",
+      tryExample: "Prueba un ejemplo:",
+      copyPlan: "Copiar plan",
+      downloadPlan: "Descargar plan de texto",
+      resourcesEyebrow: "Ayuda oficial",
+      resourcesTitle: "Recursos de Filadelfia que vale la pena guardar.",
+      resourcesIntro: "Estos enlaces abren páginas oficiales de la Ciudad, el Departamento de Agua o FEMA.",
+      resourceAlerts: "Alertas ReadyPhiladelphia",
+      resourceAlertsText: "Alertas gratuitas de emergencias y clima severo, con varios idiomas y opciones de entrega.",
+      resourceFlood: "Recursos municipales de inundación",
+      resourceFloodText: "Preparación, recuperación, mapas e información municipal sobre inundaciones.",
+      resourceAccess: "Planificar necesidades de acceso",
+      resourceAccessText: "Orientación municipal sobre medicamentos, movilidad, comunicación, animales y redes de apoyo.",
+      resourceWater: "Reportar una emergencia de agua",
+      resourceWaterText: "Información del Departamento de Agua sobre inundaciones, agua en sótanos y roturas de tuberías.",
+      privacy: "Privacidad: Tu búsqueda se envía al geocodificador público de Filadelfia y a FEMA. FloodRisk Philly no la guarda ni usa analíticas.",
+      resultsEyebrow: "Tu resultado",
+      resultsTitle: "Información sobre inundaciones para esta ubicación",
+      femaKicker: "Mapa oficial de FEMA",
+      rainKicker: "Lo que el mapa puede omitir",
+      rainTitle: "Lluvia intensa e inundaciones de alcantarillado",
+      rainText: "Los mapas de FEMA se enfocan principalmente en inundaciones fluviales y costeras. No reflejan por completo los desbordamientos en sótanos, los desagües saturados o el agua que entra durante lluvias intensas.",
+      rentKicker: "Para inquilinos",
+      rentTitle: "Tu unidad y tu edificio importan",
+      rentText: "El piso, las salidas, los ascensores, las necesidades de energía, el mantenimiento del propietario y dónde guardas artículos esenciales pueden cambiar tu riesgo personal.",
+      mapTitle: "Mapa de la ubicación buscada",
+      mapHelp: "El marcador muestra la dirección geocodificada. Usa el enlace oficial de FEMA para una revisión formal.",
+      femaLink: "Abrir el Centro de Mapas de FEMA",
+      plannerEyebrow: "Personaliza tu plan",
+      plannerTitle: "Cuéntanos sobre tu apartamento",
+      plannerIntro: "Estas respuestas permanecen en tu navegador y solo se usan para crear la lista de abajo.",
+      floorLegend: "¿Dónde está tu unidad?",
+      floorBasement: "Sótano o debajo del nivel del suelo",
+      floorGround: "Planta baja o nivel jardín",
+      floorUpper: "Segundo piso o más arriba",
+      notSure: "No estoy seguro",
+      needsLegend: "¿Qué debe considerar el plan?",
+      needElevator: "Dependo de un ascensor o no puedo usar escaleras",
+      needPower: "Uso equipo médico o de accesibilidad con electricidad",
+      needMedication: "Necesito medicamentos esenciales o sensibles a la temperatura",
+      needCommunication: "Necesito alertas accesibles o apoyo de comunicación",
+      needAnimal: "Tengo una mascota o animal de servicio",
+      buildPlan: "Crear mi lista",
+      checklistEyebrow: "Qué hacer ahora",
+      checklistTitle: "Tu lista de preparación para inundaciones",
+      printPlan: "Imprimir o guardar el plan",
+      howEyebrow: "Cómo funciona",
+      howTitle: "Tres tipos de información, claramente separados.",
+      step1Title: "Peligro oficial cartografiado",
+      step1Text: "Consultamos la Capa Nacional de Riesgo de Inundación de FEMA en el punto buscado y mostramos la zona devuelta.",
+      step2Title: "Límites y contexto local",
+      step2Text: "Explicamos lo que el mapa federal puede omitir, como desbordamientos, lluvias intensas y condiciones específicas del edificio.",
+      step3Title: "Tu plan como inquilino",
+      step3Text: "Puedes añadir información sobre piso, salidas, discapacidad, electricidad, medicamentos y animales para personalizar la orientación.",
+      whyEyebrow: "Por qué existe",
+      whyTitle: "Las herramientas de inundación rara vez comienzan con los inquilinos.",
+      whyText: "Los inquilinos quizá no controlen el drenaje, las reparaciones, los ascensores o los procedimientos de emergencia, pero aun así enfrentan daños, desplazamiento, pérdida de trabajo y salidas inaccesibles. FloodRisk Philly convierte un resultado cartográfico en preguntas y acciones prácticas.",
+      limitTitle: "Limitación importante",
+      limitText: "FloodRisk Philly ofrece información educativa y orientación de preparación. No es una determinación de seguro, evaluación de ingeniería, alerta de emergencia, opinión legal ni garantía de que una propiedad se inundará o no.",
+      footerTag: "Información clara sobre inundaciones para inquilinos de Filadelfia.",
+      methodology: "Metodología",
+      privacyLink: "Privacidad",
+      source: "Ver código",
+      searching: "Consultando la dirección y el mapa de FEMA…",
+      noAddress: "Ingresa una dirección en Filadelfia.",
+      noMatch: "No pude encontrar esa dirección en Filadelfia. Revisa el número y la ortografía.",
+      outsidePhilly: "Ese resultado parece estar fuera de Filadelfia. La herramienta solo admite direcciones de Filadelfia.",
+      femaUnavailable: "Se encontró la dirección, pero FEMA no devolvió una zona. Inténtalo más tarde o abre el mapa oficial.",
+      found: "Dirección encontrada. La información está lista.",
+      networkError: "El servicio no respondió. Revisa tu conexión e inténtalo otra vez.",
+      rightNow: "Ahora mismo",
+      thisWeek: "Esta semana",
+      beforeStorm: "Antes de la temporada de tormentas",
+      complete: "completado"
+    }
+  };
+
+  const zoneInfo = {
+    AE: {
+      level: "high",
+      en: ["High mapped flood risk", "This area has a 1% or greater annual chance of flooding, with flood elevations calculated by FEMA.", "A FEMA zone does not predict exactly when or how deep a specific apartment will flood."],
+      es: ["Riesgo alto cartografiado", "Esta zona tiene una probabilidad anual de inundación del 1% o más, con elevaciones calculadas por FEMA.", "La zona no predice cuándo ni a qué profundidad se inundará un apartamento específico."]
+    },
+    A: {
+      level: "high",
+      en: ["High mapped flood risk", "This area has a 1% or greater annual flood chance, but FEMA has not provided detailed flood elevations here.", "Building elevation and unit level are especially important."],
+      es: ["Riesgo alto cartografiado", "Esta zona tiene una probabilidad anual de inundación del 1% o más, pero FEMA no ofrece elevaciones detalladas aquí.", "La elevación del edificio y el piso de la unidad son especialmente importantes."]
+    },
+    AO: {
+      level: "high",
+      en: ["High mapped flood risk", "FEMA maps shallow sheet-flow flooding here, often from water moving across the ground.", "Check the mapped depth on FEMA's official map and plan for blocked ground-level exits."],
+      es: ["Riesgo alto cartografiado", "FEMA muestra inundación superficial por agua que se desplaza sobre el terreno.", "Consulta la profundidad en el mapa oficial y planifica salidas bloqueadas a nivel del suelo."]
+    },
+    AH: {
+      level: "high",
+      en: ["High mapped flood risk", "FEMA maps shallow ponding or flooding, generally one to three feet deep.", "Low entrances, garden units, and basement spaces may face serious risk."],
+      es: ["Riesgo alto cartografiado", "FEMA muestra acumulación o inundación poco profunda, generalmente de uno a tres pies.", "Las entradas bajas, unidades jardín y sótanos pueden enfrentar riesgo grave."]
+    },
+    VE: {
+      level: "high",
+      en: ["High coastal flood risk", "This is a coastal high-hazard area where waves can add destructive force to flooding.", "Use FEMA's official map and city emergency guidance for detailed planning."],
+      es: ["Riesgo costero alto", "Esta es una zona costera de alto peligro donde las olas pueden aumentar la fuerza destructiva.", "Usa el mapa oficial y la orientación municipal para planificar."]
+    },
+    V: {
+      level: "high",
+      en: ["High coastal flood risk", "This is a coastal high-hazard area without detailed flood elevation data.", "Wave action and access routes may be significant concerns."],
+      es: ["Riesgo costero alto", "Esta es una zona costera de alto peligro sin datos detallados de elevación.", "Las olas y las rutas de acceso pueden ser preocupaciones importantes."]
+    },
+    X500: {
+      level: "moderate",
+      en: ["Moderate mapped flood risk", "This area is outside the highest-risk zone but still has a mapped 0.2% to 1% annual flood chance.", "Intense rain, drainage problems, and sewer backups can still cause damaging flooding."],
+      es: ["Riesgo moderado cartografiado", "Esta zona está fuera del riesgo más alto, pero aún tiene una probabilidad anual cartografiada de entre 0.2% y 1%.", "La lluvia intensa, el drenaje y los desbordamientos aún pueden causar daños."]
+    },
+    X: {
+      level: "lower",
+      en: ["Lower mapped river or coastal risk", "FEMA places this point outside its mapped 1% and 0.2% annual-chance flood areas.", "Lower mapped risk does not mean no risk. Street flooding, sewer backups, and building failures may not appear on this map."],
+      es: ["Menor riesgo fluvial o costero cartografiado", "FEMA ubica este punto fuera de sus zonas de probabilidad anual del 1% y 0.2%.", "Menor riesgo no significa riesgo cero. Las inundaciones de calles y alcantarillado pueden no aparecer."]
+    },
+    D: {
+      level: "unknown",
+      en: ["Risk not determined", "FEMA has not completed a detailed flood analysis for this area.", "No mapped determination is not the same as no flood risk."],
+      es: ["Riesgo no determinado", "FEMA no ha completado un análisis detallado para esta zona.", "La falta de una determinación no significa que no exista riesgo."]
+    },
+    NONE: {
+      level: "lower",
+      en: ["No FEMA flood zone returned at this point", "The FEMA layer did not identify a mapped special flood hazard zone at the searched point.", "This does not rule out street flooding, sewer backups, or rainfall-related flooding."],
+      es: ["FEMA no devolvió una zona en este punto", "La capa de FEMA no identificó una zona especial de peligro en el punto buscado.", "Esto no descarta inundaciones de calles, alcantarillado o lluvias intensas."]
+    }
+  };
+
+  const checklistText = {
+    en: {
+      baseNow: [
+        "Save the address of your safest exit and a backup exit.",
+        "Put identification, medication information, and key phone numbers in a waterproof bag.",
+        "Charge your phone and a portable battery before severe weather."
+      ],
+      baseWeek: [
+        "Ask your landlord or property manager about past water entry, sewer backups, and the building's emergency plan.",
+        "Photograph your belongings and save the images somewhere you can access away from home.",
+        "Review whether renters insurance covers your belongings and whether separate flood coverage is available."
+      ],
+      baseSeason: [
+        "Sign up for ReadyPhiladelphia emergency alerts.",
+        "Keep essential items above floor level and away from basement storage.",
+        "Choose a person outside your building who can check in during a storm."
+      ],
+      basement: [
+        "Do not remain in a basement unit when water begins entering or a flood warning affects your area.",
+        "Keep shoes, mobility equipment, medication, and a go-bag within reach of the exit."
+      ],
+      ground: [
+        "Keep a clear route from your unit to higher ground or an upper floor.",
+        "Move irreplaceable and essential items off the floor before heavy rain."
+      ],
+      elevator: [
+        "Ask building management what happens when elevators lose power and identify an accessible alternative exit.",
+        "Arrange assistance in advance without relying on firefighters to carry you."
+      ],
+      power: [
+        "Write down the wattage and backup-power requirements for essential equipment.",
+        "Plan where you can safely go if power is unavailable for longer than your battery supply."
+      ],
+      medication: [
+        "Keep an insulated container and reusable cold packs available for temperature-sensitive medication.",
+        "Maintain a current medication list and refill essential prescriptions before major storms when possible."
+      ],
+      communication: [
+        "Enable emergency alerts in the format that works for you and identify a backup way to receive warnings.",
+        "Prepare a short communication card explaining your access needs."
+      ],
+      animal: [
+        "Pack food, water, medication, identification, and a leash or carrier for your animal.",
+        "Confirm that your evacuation destination can accommodate your pet or service animal."
+      ],
+      high: [
+        "Treat flood watches and warnings seriously and decide early where you will go.",
+        "Avoid storing essential belongings or mobility equipment below the expected flood level."
+      ]
+    },
+    es: {
+      baseNow: [
+        "Guarda la dirección de tu salida más segura y una salida alternativa.",
+        "Pon identificación, información médica y teléfonos importantes en una bolsa impermeable.",
+        "Carga tu teléfono y una batería portátil antes del mal tiempo."
+      ],
+      baseWeek: [
+        "Pregunta al propietario sobre entradas de agua anteriores, desbordamientos y el plan de emergencia del edificio.",
+        "Fotografía tus pertenencias y guarda las imágenes en un lugar accesible fuera de casa.",
+        "Revisa qué cubre tu seguro de inquilino y si existe cobertura separada contra inundaciones."
+      ],
+      baseSeason: [
+        "Inscríbete en las alertas de emergencia ReadyPhiladelphia.",
+        "Mantén artículos esenciales por encima del piso y fuera del sótano.",
+        "Elige a una persona fuera del edificio que pueda comunicarse contigo durante una tormenta."
+      ],
+      basement: [
+        "No permanezcas en un sótano cuando entre agua o haya una advertencia de inundación.",
+        "Mantén zapatos, equipo de movilidad, medicamentos y una bolsa de emergencia cerca de la salida."
+      ],
+      ground: [
+        "Mantén una ruta libre hacia terreno más alto o un piso superior.",
+        "Levanta del piso los artículos esenciales antes de lluvias intensas."
+      ],
+      elevator: [
+        "Pregunta qué ocurre cuando el ascensor pierde electricidad e identifica una salida accesible alternativa.",
+        "Organiza ayuda con anticipación sin depender de que los bomberos te carguen."
+      ],
+      power: [
+        "Anota el consumo y los requisitos de batería de tu equipo esencial.",
+        "Planifica un lugar seguro si la electricidad falta más tiempo que la duración de tus baterías."
+      ],
+      medication: [
+        "Ten un recipiente aislado y paquetes fríos para medicamentos sensibles a la temperatura.",
+        "Mantén una lista actualizada y renueva medicamentos esenciales antes de tormentas importantes cuando sea posible."
+      ],
+      communication: [
+        "Activa alertas en un formato accesible e identifica una forma alternativa de recibir avisos.",
+        "Prepara una tarjeta breve que explique tus necesidades de acceso."
+      ],
+      animal: [
+        "Empaca comida, agua, medicamentos, identificación y correa o transportadora.",
+        "Confirma que tu destino pueda recibir a tu mascota o animal de servicio."
+      ],
+      high: [
+        "Toma en serio las vigilancias y advertencias y decide temprano adónde irás.",
+        "No guardes pertenencias esenciales ni equipo de movilidad debajo del nivel esperado del agua."
+      ]
+    }
+  };
+
+  const state = {
+    lang: localStorage.getItem("floodrisk-language") === "es" ? "es" : "en",
+    map: null,
+    marker: null,
+    zone: "NONE",
+    address: ""
+  };
+
+  const el = (id) => document.getElementById(id);
+  const t = (key) => translations[state.lang][key] || key;
+
+  function setLanguage(lang) {
+    state.lang = lang;
+    document.documentElement.lang = lang;
+    localStorage.setItem("floodrisk-language", lang);
+
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      const key = node.dataset.i18n;
+      if (translations[lang][key]) node.textContent = translations[lang][key];
+    });
+
+    el("language-toggle").setAttribute(
+      "aria-label",
+      lang === "en" ? "Cambiar a español" : "Switch to English"
+    );
+
+    if (!el("results").hidden) renderZone(state.zone);
+  }
+
+  function setStatus(message, type = "") {
+    const status = el("status");
+    status.textContent = message;
+    status.className = `status ${type}`.trim();
+  }
+
+  function normalizeAddress(value) {
+    return value
+      .replace(/\s+(apt|apartment|unit|#)\s*[\w-]+.*$/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function isInPhiladelphia(lat, lng) {
+    return (
+      lat >= PHILLY_BOUNDS.minLat &&
+      lat <= PHILLY_BOUNDS.maxLat &&
+      lng >= PHILLY_BOUNDS.minLng &&
+      lng <= PHILLY_BOUNDS.maxLng
+    );
+  }
+
+  async function geocodeAddress(address) {
+    const params = new URLSearchParams({
+      SingleLine: address,
+      outFields: "Match_addr,Addr_type,City,Subregion,Region,Postal",
+      outSR: "4326",
+      maxLocations: "5",
+      f: "json"
+    });
+
+    const response = await fetch(`${PHILLY_GEOCODER}?${params}`);
+    if (!response.ok) throw new Error("geocoder");
+    const data = await response.json();
+
+    const candidates = (data.candidates || [])
+      .filter((candidate) => candidate.location)
+      .sort((a, b) => (b.score || 0) - (a.score || 0));
+
+    if (!candidates.length) return null;
+
+    const best = candidates[0];
+    return {
+      address: best.address || best.attributes?.Match_addr || address,
+      lat: Number(best.location.y),
+      lng: Number(best.location.x),
+      score: Number(best.score || 0)
+    };
+  }
+
+  async function queryFemaZone(lat, lng) {
+    const params = new URLSearchParams({
+      where: "1=1",
+      geometry: `${lng},${lat}`,
+      geometryType: "esriGeometryPoint",
+      inSR: "4326",
+      spatialRel: "esriSpatialRelIntersects",
+      outFields: "FLD_ZONE,ZONE_SUBTY,SFHA_TF",
+      returnGeometry: "false",
+      f: "json"
+    });
+
+    const response = await fetch(`${FEMA_LAYER_URL}?${params}`);
+    if (!response.ok) throw new Error("fema");
+    const data = await response.json();
+    if (data.error) throw new Error("fema");
+
+    const feature = data.features?.[0];
+    if (!feature) return "NONE";
+
+    const attrs = feature.attributes || {};
+    const raw = String(attrs.FLD_ZONE || "").toUpperCase().trim();
+    const subtype = String(attrs.ZONE_SUBTY || "").toUpperCase();
+
+    if (raw === "X" && /0\.2|500|MODERATE/.test(subtype)) return "X500";
+    if (zoneInfo[raw]) return raw;
+    return raw || "NONE";
+  }
+
+  function renderZone(zone) {
+    const info = zoneInfo[zone] || zoneInfo.NONE;
+    const copy = info[state.lang];
+    const badge = el("zone-badge");
+
+    badge.textContent = zone === "NONE" ? "N/A" : zone;
+    badge.className = `zone-badge ${info.level}`;
+    el("zone-title").textContent = copy[0];
+    el("risk-level").textContent =
+      info.level === "high"
+        ? (state.lang === "en" ? "High risk" : "Riesgo alto")
+        : info.level === "moderate"
+          ? (state.lang === "en" ? "Moderate risk" : "Riesgo moderado")
+          : info.level === "lower"
+            ? (state.lang === "en" ? "Lower mapped risk" : "Menor riesgo cartografiado")
+            : (state.lang === "en" ? "Undetermined" : "No determinado");
+    el("zone-explanation").textContent = copy[1];
+    el("zone-caveat").textContent = copy[2];
+  }
+
+  function renderMap(lat, lng, label) {
+    if (!window.L) return;
+
+    if (!state.map) {
+      state.map = L.map("map", { scrollWheelZoom: false }).setView([lat, lng], 14);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(state.map);
+    } else {
+      state.map.setView([lat, lng], 14);
+    }
+
+    if (state.marker) state.marker.remove();
+    state.marker = L.marker([lat, lng]).addTo(state.map).bindPopup(label).openPopup();
+    window.setTimeout(() => state.map.invalidateSize(), 100);
+  }
+
+  function buildFemaLink(lat, lng) {
+    const url = new URL("https://msc.fema.gov/portal/search");
+    url.searchParams.set("AddressQuery", `${lat},${lng}`);
+    el("fema-link").href = url.toString();
+  }
+
+  async function handleAddressSubmit(event) {
+    event.preventDefault();
+    const input = el("address");
+    const address = normalizeAddress(input.value);
+
+    if (!address) {
+      setStatus(t("noAddress"), "error");
+      input.focus();
+      return;
+    }
+
+    const button = el("search-button");
+    button.disabled = true;
+    setStatus(t("searching"));
+
+    try {
+      const place = await geocodeAddress(`${address}, Philadelphia, PA`);
+      if (!place || place.score < 70) {
+        setStatus(t("noMatch"), "error");
+        return;
+      }
+
+      if (!isInPhiladelphia(place.lat, place.lng)) {
+        setStatus(t("outsidePhilly"), "error");
+        return;
+      }
+
+      state.address = place.address;
+      el("matched-address").textContent = place.address;
+      renderMap(place.lat, place.lng, place.address);
+      buildFemaLink(place.lat, place.lng);
+
+      try {
+        state.zone = await queryFemaZone(place.lat, place.lng);
+        renderZone(state.zone);
+        setStatus(t("found"), "success");
+      } catch {
+        state.zone = "NONE";
+        renderZone(state.zone);
+        setStatus(t("femaUnavailable"), "error");
+      }
+
+      el("results").hidden = false;
+      el("checklist-section").hidden = true;
+      requestAnimationFrame(() => {
+        el("results-title").focus?.();
+        el("results").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    } catch {
+      setStatus(t("networkError"), "error");
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function unique(items) {
+    return [...new Set(items)];
+  }
+
+  function makeChecklist(floor, needs) {
+    const copy = checklistText[state.lang];
+    const groups = {
+      now: [...copy.baseNow],
+      week: [...copy.baseWeek],
+      season: [...copy.baseSeason]
+    };
+
+    if (floor === "basement") groups.now.push(...copy.basement);
+    if (floor === "ground") groups.week.push(...copy.ground);
+    if (needs.includes("elevator")) groups.week.push(...copy.elevator);
+    if (needs.includes("power")) groups.now.push(copy.power[0], copy.power[1]);
+    if (needs.includes("medication")) groups.now.push(copy.medication[0], copy.medication[1]);
+    if (needs.includes("communication")) groups.week.push(...copy.communication);
+    if (needs.includes("animal")) groups.season.push(...copy.animal);
+
+    const level = (zoneInfo[state.zone] || zoneInfo.NONE).level;
+    if (level === "high") groups.now.push(...copy.high);
+
+    return {
+      now: unique(groups.now),
+      week: unique(groups.week),
+      season: unique(groups.season)
+    };
+  }
+
+  function renderChecklist(groups) {
+    const container = el("checklist-groups");
+    container.innerHTML = "";
+
+    const sections = [
+      ["now", t("rightNow")],
+      ["week", t("thisWeek")],
+      ["season", t("beforeStorm")]
+    ];
+
+    let itemIndex = 0;
+    sections.forEach(([key, heading]) => {
+      const section = document.createElement("section");
+      section.className = "checklist-group";
+
+      const title = document.createElement("h3");
+      title.textContent = heading;
+      section.appendChild(title);
+
+      groups[key].forEach((text) => {
+        itemIndex += 1;
+        const id = `check-${itemIndex}`;
+        const label = document.createElement("label");
+        label.className = "checklist-item";
+        label.htmlFor = id;
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.id = id;
+        checkbox.addEventListener("change", updateProgress);
+
+        const span = document.createElement("span");
+        span.textContent = text;
+
+        label.append(checkbox, span);
+        section.appendChild(label);
+      });
+
+      container.appendChild(section);
+    });
+
+    el("checklist-section").hidden = false;
+    updateProgress();
+    el("checklist-section").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function updateProgress() {
+    const boxes = [...document.querySelectorAll(".checklist-item input")];
+    const completed = boxes.filter((box) => box.checked).length;
+    const percent = boxes.length ? Math.round((completed / boxes.length) * 100) : 0;
+    el("progress-text").textContent = `${percent}% ${t("complete")}`;
+    el("progress-bar").style.width = `${percent}%`;
+    const progress = document.querySelector(".progress-track");
+    progress.setAttribute("aria-valuenow", String(percent));
+  }
+
+  function handlePlannerSubmit(event) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const floor = data.get("floor") || "unknown";
+    const needs = data.getAll("needs");
+    renderChecklist(makeChecklist(floor, needs));
+  }
+
+
+  function checklistAsText() {
+    const lines = [];
+    lines.push("FloodRisk Philly");
+    if (state.address) lines.push(state.address);
+    const zoneTitle = el("zone-title")?.textContent;
+    const zoneExplanation = el("zone-explanation")?.textContent;
+    if (zoneTitle) lines.push(`\n${zoneTitle}`);
+    if (zoneExplanation) lines.push(zoneExplanation);
+
+    document.querySelectorAll(".checklist-group").forEach((group) => {
+      const heading = group.querySelector("h3")?.textContent || "";
+      lines.push(`\n${heading}`);
+      group.querySelectorAll(".checklist-item").forEach((item) => {
+        const checked = item.querySelector("input")?.checked ? "[x]" : "[ ]";
+        const text = item.querySelector("span")?.textContent || "";
+        lines.push(`${checked} ${text}`);
+      });
+    });
+
+    lines.push(
+      state.lang === "en"
+        ? "\nEducational guidance only. Follow official emergency instructions."
+        : "\nSolo orientación educativa. Sigue las instrucciones oficiales de emergencia."
+    );
+    return lines.join("\n");
+  }
+
+  async function copyPlan() {
+    const text = checklistAsText();
+    try {
+      await navigator.clipboard.writeText(text);
+      setStatus(state.lang === "en" ? "Plan copied." : "Plan copiado.", "success");
+    } catch {
+      setStatus(
+        state.lang === "en"
+          ? "Your browser could not copy the plan. Use the download button instead."
+          : "El navegador no pudo copiar el plan. Usa el botón de descarga.",
+        "error"
+      );
+    }
+  }
+
+  function downloadPlan() {
+    const blob = new Blob([checklistAsText()], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "floodrisk-philly-plan.txt";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function useSampleAddress(event) {
+    const address = event.currentTarget.dataset.address;
+    el("address").value = address;
+    el("address").focus();
+  }
+
+
+  function init() {
+    setLanguage(state.lang);
+    el("language-toggle").addEventListener("click", () => {
+      setLanguage(state.lang === "en" ? "es" : "en");
+    });
+    el("address-form").addEventListener("submit", handleAddressSubmit);
+    el("planner-form").addEventListener("submit", handlePlannerSubmit);
+    el("print-button").addEventListener("click", () => window.print());
+    el("copy-button").addEventListener("click", copyPlan);
+    el("download-button").addEventListener("click", downloadPlan);
+    document.querySelectorAll(".sample-address").forEach((button) => {
+      button.addEventListener("click", useSampleAddress);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+
+</script>
+</body>
+</html>
