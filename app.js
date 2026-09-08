@@ -641,35 +641,31 @@
   }
 
   async function geocodeAddress(address) {
-    const params = new URLSearchParams({
-      SingleLine: address,
-      outFields: "Match_addr,Addr_type,City,Subregion,Region,Postal",
-      outSR: "4326",
-      maxLocations: "5",
-      f: "json"
-    });
+const params = new URLSearchParams({
+address: address,
+benchmark: "Public_AR_Current",
+format: "json"
+});
 
-    const response = await fetchWithTimeout(`${PHILLY_GEOCODER}?${params}`);
-    if (!response.ok) throw new Error("geocoder");
-    const data = await response.json();
+const response = await fetchWithTimeout(
+`https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?${params}`
+);
+if (!response.ok) throw new Error("geocoder");
+const data = await response.json();
 
-    const candidates = (data.candidates || [])
-      .filter((candidate) => candidate.location)
-      .sort((a, b) => (b.score || 0) - (a.score || 0));
+const matches = data?.result?.addressMatches || [];
+if (!matches.length) return null;
 
-    if (!candidates.length) return null;
-
-    const best = candidates[0];
-    return {
-      address: best.address || best.attributes?.Match_addr || address,
-      lat: Number(best.location.y),
-      lng: Number(best.location.x),
-      score: Number(best.score || 0),
-      zip: String(best.attributes?.Postal || "").trim(),
-      addressType: String(best.attributes?.Addr_type || "").trim()
-    };
-  }
-
+const best = matches[0];
+return {
+address: best.matchedAddress || address,
+lat: Number(best.coordinates.y),
+lng: Number(best.coordinates.x),
+score: 95,
+zip: String(best.addressComponents?.zip || "").trim(),
+addressType: "StreetAddress"
+};
+}
 
   function weatherCopy() {
     return state.lang === "en"
