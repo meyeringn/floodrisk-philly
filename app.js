@@ -388,7 +388,7 @@
 
     el("language-toggle").setAttribute(
       "aria-label",
-      lang === "en" ? "Cambiar a español" : "Switch to English"
+      el("language-toggle").textContent.trim() + ": " + (lang === "en" ? "cambiar a español" : "switch to English")
     );
 
     if (!el("results").hidden) renderZone(state.zone);
