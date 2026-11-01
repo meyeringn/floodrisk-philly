@@ -2,6 +2,8 @@
 
 FloodRisk Philly is a free, open-source civic-tech tool for Philadelphia renters. It combines FEMA flood-zone information, current National Weather Service alert context, and a disability-aware preparedness plan.
 
+**Data last verified:** November 2026
+
 ## Version 9
 
 - Philadelphia address matching and confidence
